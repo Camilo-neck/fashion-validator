@@ -27,3 +27,14 @@ system.json
 .vscode/
 .idea/
 .DS_Store
+
+# LaTeX
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
