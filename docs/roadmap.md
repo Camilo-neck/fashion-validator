@@ -112,12 +112,12 @@ hecho.
 
 ### Nivel 2
 
-Vestibilidad, drapeado, mapas de tensión, poses dinámicas. Depende de elegir
-motor de simulación, que sigue siendo pregunta abierta.
+La mitad geométrica está hecha: las aberturas de la prenda montada se miden y,
+con `orient` declarado y un `Cuerpo`, se juzgan. No necesita simulación ni GPU,
+así que corre sobre cada muestra como los niveles anteriores.
 
-La división es por coste, no por importancia: los niveles 0 y 1 son geometría
-pura y corren sobre cada muestra; el nivel 2 corre solo sobre lo que sobrevivió
-a los anteriores.
+La mitad física — drapeado, tensión, poses, accesibilidad — está planificada y
+deliberadamente sin construir: [`nivel2-simulado.md`](nivel2-simulado.md).
 
 ## Fuera de alcance de este repositorio
 

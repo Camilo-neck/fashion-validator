@@ -28,6 +28,7 @@ puedan coser.
 - [Uso](#uso)
 - [Declarar la intención](#declarar-la-intención)
 - [Comprobaciones](#comprobaciones)
+- [Vestibilidad](#vestibilidad)
 - [Salida para reparación automática](#salida-para-reparación-automática)
 - [Configuración de umbrales](#configuración-de-umbrales)
 - [Desarrollo](#desarrollo)
@@ -182,6 +183,52 @@ y `direct` en 4.
 | `costuras_en_redondo` | cuántas costuras cierran un tubo (info) |
 | `bordes_libres` | cuántos bordes quedan sin coser (info) |
 
+### Nivel 2 — vestibilidad, sin simulación
+
+| Código | Qué detecta |
+| --- | --- |
+| `prenda_sellada` | ningún borde queda libre: no hay por dónde entrar |
+| `abertura_insuficiente` | el cuerpo no pasa por la abertura declarada |
+| `abertura` | contorno de cada abertura de la prenda montada (info) |
+| `montaje_supuesto` | falta `orient`, así que se mide pero no se juzga (aviso) |
+| `montaje_incoherente` | el contorno montado no se puede recorrer (aviso) |
+
+## Vestibilidad
+
+Los bordes que no se cosen forman bucles cerrados en la prenda montada — escote,
+bajo, puños — y el contorno de cada uno es la suma de las longitudes de sus
+bordes. Con una medida del cuerpo, eso responde si la cabeza pasa por el escote
+sin necesidad de simular nada.
+
+```python
+from fashion_validator import validar, Cuerpo
+
+hallazgos = validar(spec, cuerpo=Cuerpo(head=57, hip=100))
+```
+
+Sin `cuerpo`, las aberturas se miden y se informan, pero no se juzgan.
+
+Una abertura declara qué medida tiene que dejar pasar, y con qué ayuda:
+
+```json
+{"endpoints": [3, 4],
+ "finish": {"type": "opening", "fits": "head", "stretch": 1.5}}
+```
+
+`fits` nombra un campo de `Cuerpo`; `stretch` es cuánto da de sí el tejido en esa
+abertura; `closure` (`zip`, `buttons`) dice que se abre para pasar y exime del
+chequeo. Sin `stretch` ni `closure`, un escote de punto se marcaría como
+inservible — es la misma excepción que las pinzas y los godets, por cuarta vez.
+
+**El montaje depende de `orient`.** Con la orientación equivocada, los cuatro
+huecos de una camiseta salen como dos bucles de 129,6 cm. Por eso, si alguna
+costura no la declara, el nivel 2 informa contornos pero no emite ningún
+veredicto contra el cuerpo.
+
+La parte que sí necesita simulación — drapeado, tensión, poses — no está
+implementada a propósito; el plan está en
+[`docs/nivel2-simulado.md`](docs/nivel2-simulado.md).
+
 ## Salida para reparación automática
 
 Cada hallazgo lleva código, severidad, la referencia exacta y los valores
@@ -221,18 +268,21 @@ pip install -e ".[dev]"
 pytest
 ```
 
-La suite tiene 29 casos que comprueban las dos direcciones: que un patrón sano
+La suite tiene 36 casos que comprueban las dos direcciones: que un patrón sano
 pase limpio y que cada defecto inyectado se detecte. Las dos importan por igual
 — la primera versión de este validador rechazaba el 100% de los patrones.
 
 ## Estado y límites conocidos
 
-Los niveles 0 y 1 están implementados. Pendiente:
+Los niveles 0 y 1 están completos, y el nivel 2 solo en su mitad
+geométrica. Pendiente:
 
-- **Vestibilidad**: que la prenda pase por la cabeza o la cadera. Necesita
-  medidas corporales y pertenece al nivel 2, con simulación física.
 - **Calibración real**: los umbrales por defecto son razonables pero no están
   contrastados contra telas físicas. Eso requiere un patronista.
+- **Nivel 2 simulado**: drapeado, mapas de tensión y poses dinámicas. No está
+  hecho a propósito: sin telas medidas ni patronista, un veredicto basado en
+  simulación afirma algo que nadie ha comprobado. Ver
+  [`docs/nivel2-simulado.md`](docs/nivel2-simulado.md).
 - La factibilidad real del ensamblaje es accesibilidad — que la aguja llegue al
   punto — y eso necesita la prenda en 3D. `costuras_en_redondo` mide el coste de
   coser, no la imposibilidad de hacerlo.
@@ -251,7 +301,7 @@ proyecto del que nace este validador en [`docs/proyecto.md`](docs/proyecto.md).
 src/fashion_validator/   el paquete; solo numpy y svgpathtools
 tests/                   pruebas de discriminación
 research/                bancos que produjeron los números (necesitan GarmentCode)
-docs/                    hallazgos, hoja de ruta y contexto del proyecto
+docs/                    hallazgos, hoja de ruta, contexto y plan del nivel 2
 ```
 
 ## Contribuir

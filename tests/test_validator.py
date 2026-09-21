@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from fashion_validator import validar, longitud, Limites
+from fashion_validator import validar, longitud, Limites, Cuerpo, bucles_libres
 
 FIXTURE = Path(__file__).parent / "fixtures" / "tshirt.json"
 
@@ -299,3 +299,82 @@ def test_orientacion_declarada_puede_destapar_un_quiebre():
     spec["pattern"]["stitches"][0][0]["orient"] = "reversed"
     invertido = len([h for h in validar(spec, lim) if h.codigo == "quiebre_en_cruce"])
     assert por_defecto <= max(directo, invertido)
+
+
+# --- nivel 2 sin simulacion: vestibilidad -----------------------------------
+
+def _montada(spec):
+    """Declara la orientacion en todas las costuras: sin eso no se juzga nada."""
+    for st in spec["pattern"]["stitches"]:
+        st[0]["orient"] = "reversed"
+    return spec
+
+
+def _declarar_abertura(spec, contorno_aprox, **campos):
+    """Pone una declaracion `finish` en el bucle cuyo contorno se parece al dado."""
+    panels = spec["pattern"]["panels"]
+    for bucle in bucles_libres(spec["pattern"]):
+        largo = sum(longitud(panels[n], i) for n, i in bucle)
+        if abs(largo - contorno_aprox) < 1.0:
+            n, i = bucle[0]
+            panels[n]["edges"][i]["finish"] = {"type": "opening", **campos}
+            return spec
+    raise AssertionError(f"no hay ningun bucle de {contorno_aprox} cm")
+
+
+def _errores_vestibilidad(spec) -> set[str]:
+    """Los chequeos contra el cuerpo solo corren si se aporta un cuerpo."""
+    return {h.codigo for h in validar(spec, cuerpo=Cuerpo()) if h.severidad == "error"}
+
+
+def test_aberturas_de_la_camiseta(sano):
+    """Dos punos, escote y bajo: cuatro bucles del contorno libre."""
+    panels = sano["pattern"]["panels"]
+    contornos = sorted(round(sum(longitud(panels[n], i) for n, i in b), 1)
+                       for b in bucles_libres(sano["pattern"]))
+    assert contornos == [42.1, 42.1, 70.1, 104.8]
+
+
+def test_sin_orient_se_mide_pero_no_se_juzga(sano):
+    """El montaje supuesto informa contornos y no emite ningun veredicto."""
+    _declarar_abertura(sano, 42.1, fits="head")
+    hallazgos = [h for h in validar(sano, cuerpo=Cuerpo()) if h.nivel == 2]
+    assert any(h.codigo == "montaje_supuesto" for h in hallazgos)
+    assert not [h for h in hallazgos if h.severidad == "error"]
+
+
+def test_abertura_insuficiente(sano):
+    """Un puno de 42 cm declarado para pasar una cabeza de 57 no pasa."""
+    _declarar_abertura(_montada(sano), 42.1, fits="head")
+    assert "abertura_insuficiente" in _errores_vestibilidad(sano)
+
+
+def test_el_estiramiento_declarado_evita_el_error(sano):
+    """42 cm de punto que estira a 1.5 dan 63 cm utiles: pasa."""
+    _declarar_abertura(_montada(sano), 42.1, fits="head", stretch=1.5)
+    assert "abertura_insuficiente" not in _errores_vestibilidad(sano)
+
+
+def test_el_cierre_declarado_evita_el_error(sano):
+    _declarar_abertura(_montada(sano), 42.1, fits="head", closure="zip")
+    assert "abertura_insuficiente" not in _errores_vestibilidad(sano)
+
+
+def test_abertura_holgada_no_es_error(sano):
+    """El bajo de 104.8 cm sobre una cadera de 100 pasa con holgura."""
+    _declarar_abertura(_montada(sano), 104.8, fits="hip")
+    assert "abertura_insuficiente" not in _errores_vestibilidad(sano)
+
+
+def test_prenda_sellada():
+    """Cuatro costuras cierran los dos paneles: no hay por donde entrar."""
+    rect = [[0, 0], [20, 0], [20, 40], [0, 40]]
+    aristas = [{"endpoints": [0, 1]}, {"endpoints": [1, 2]},
+               {"endpoints": [2, 3]}, {"endpoints": [3, 0]}]
+    spec = {"pattern": {
+        "panels": {"a": {"vertices": rect, "edges": [dict(e) for e in aristas]},
+                   "b": {"vertices": rect, "edges": [dict(e) for e in aristas]}},
+        "stitches": [[{"panel": "a", "edge": k}, {"panel": "b", "edge": k}]
+                     for k in range(4)],
+    }}
+    assert "prenda_sellada" in errores(spec)

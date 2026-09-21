@@ -6,7 +6,8 @@ import json
 from dataclasses import dataclass, field, asdict
 from typing import Any
 
-__all__ = ["Limites", "Hallazgo", "resumen", "para_modelo", "SEVERIDAD_ORDEN"]
+__all__ = ["Limites", "Cuerpo", "Hallazgo", "resumen", "para_modelo",
+           "SEVERIDAD_ORDEN"]
 
 
 @dataclass
@@ -44,9 +45,38 @@ class Limites:
     # que casi seguro es un fruncido deliberado y no un defecto: baja a aviso.
     umbral_fruncido: float = 0.15
 
+    # Como se emparejan los extremos de los dos bordes de una costura cuando la
+    # costura no lo declara con `orient`. Es el convenio observado en la salida
+    # de GarmentCode: verificado sobre sus dos prendas de referencia, donde
+    # 'reversed' produce las aberturas que la prenda tiene de verdad y 'direct'
+    # las fusiona. No es una garantia del formato, por eso es configurable y la
+    # declaracion por costura manda sobre esto.
+    orientacion_por_defecto: str = "reversed"
+
     # Distancia bajo la cual un cruce se considera ocurrido en el vertice comun.
     eps_vertice: float = 0.05         # cm
     muestras_linealizacion: int = 48  # resolucion para cruzar arcos y curvas
+
+
+@dataclass
+class Cuerpo:
+    """Medidas del cuerpo, en centimetros, para los chequeos de vestibilidad.
+
+    No vienen en el patron: GarmentCode las guarda en un archivo de cuerpo
+    aparte, asi que hay que aportarlas. Los valores por defecto son un maniqui
+    de talla media y sirven para tantear, no para validar a nadie.
+
+    Los nombres coinciden con los valores admitidos en `finish.fits`, que es
+    como una abertura dice que medida tiene que dejar pasar.
+    """
+
+    head: float = 57.0    # contorno de cabeza: lo que un escote sin cierre debe pasar
+    neck: float = 37.0
+    bust: float = 94.0
+    waist: float = 76.0
+    hip: float = 100.0
+    wrist: float = 17.0
+    hand: float = 21.0    # contorno de mano: lo que un puno sin cierre debe pasar
 
 
 SEVERIDAD_ORDEN = {"error": 0, "aviso": 1, "info": 2}
