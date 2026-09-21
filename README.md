@@ -43,12 +43,26 @@ puedan coser.
 
 Los sistemas actuales validan muy poco. GarmentCode, el más completo de los
 proyectos abiertos, solo comprueba que un panel no se cruce consigo mismo y que
-la prenda no arrastre por el suelo. Sobre 30 patrones que da por válidos, este
-validador encuentra errores en 23: bordes de 0,07 cm, esquinas de 9°, radios de
-curvatura de 0,13 cm y costuras cuyos dos lados miden distinto sin explicación.
+la prenda no arrastre por el suelo.
 
-Los números y la metodología con la que se obtuvieron están documentados en
-[`docs/hallazgos-fase1.md`](docs/hallazgos-fase1.md).
+Sobre **3.450 patrones del corpus publicado GarmentCodeData v2** — ya filtrados
+por sus autores y supervivientes de la simulación física — este validador
+encuentra que:
+
+| | Patrones | % |
+| --- | ---: | ---: |
+| Tienen un defecto geométrico que impide fabricarlos | 705 | **20,4** |
+| Solo les falta declarar la intención de una costura | 2.383 | 69,1 |
+| Pasan limpios | 362 | 10,5 |
+
+Uno de cada cinco no se puede coser: bordes de 0,018 cm, esquinas de 0,16°,
+paneles que no caben en el rollo. Los otros dos tercios no son necesariamente
+defectuosos — son *indistinguibles* de un defecto, porque el formato no guarda
+si un desajuste era buscado.
+
+La metodología está en
+[`docs/hallazgos-corpus.md`](docs/hallazgos-corpus.md); la fase 1, sobre 30
+patrones, en [`docs/hallazgos-fase1.md`](docs/hallazgos-fase1.md).
 
 ## Instalación
 

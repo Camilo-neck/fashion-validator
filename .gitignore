@@ -38,3 +38,6 @@ system.json
 *.out
 *.synctex.gz
 *.toc
+
+# Corpus descargado, no versionado
+data/

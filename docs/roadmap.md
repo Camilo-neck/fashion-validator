@@ -26,9 +26,14 @@ con mayor retorno y el único que hay que hacer *antes* de la fase 3.
 un directorio de patrones, mide y saca el manifiesto de los sanos. A ~10 ms por
 patrón, las 115.000 prendas son unos 20 minutos en un núcleo.
 
-**Sigue bloqueado por**: acceso de red a GarmentCodeData y confirmar su
-licencia. No es trabajo de ingeniería; es una máquina con salida abierta y una
-tarde de leer términos.
+**Hecho sobre un lote**: 3.450 patrones medidos, resultados en
+[`hallazgos-corpus.md`](hallazgos-corpus.md). El 20,4% tiene un defecto
+geométrico duro y solo el 10,5% pasa limpio.
+
+**Lo que sigue bloqueado es republicar el subconjunto filtrado**, no medirlo:
+GarmentCodeData no declara licencia en ninguna parte. Medir y publicar
+estadísticas es uso de investigación con cita; redistribuir un subconjunto es
+otra cosa y hay que preguntar a los autores.
 
 ### 2. Compuerta antes de la simulación 3D
 
