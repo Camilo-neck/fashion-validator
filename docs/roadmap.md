@@ -18,9 +18,17 @@ que GarmentCode aprueba tienen defectos, las 115.000 prendas de GarmentCodeData
 contienen esos mismos defectos, y cualquier modelo entrenado sobre ellas los
 aprende como construcción correcta.
 
-Pasar `validar()` sobre el corpus y filtrar o ponderar por puntaje corrige el
-problema en la raíz, una sola vez, antes de gastar una hora de GPU. Es el uso
-con mayor retorno y el único que hay que hacer *antes* de la fase 3.
+Pasar `validar()` sobre el corpus corrige el problema en la raíz, una sola vez,
+antes de gastar una hora de GPU. Es el uso con mayor retorno y el único que hay
+que hacer *antes* de la fase 3.
+
+**Pero no filtrando por "cero errores", como decía este plan.** Medido sobre
+3.450 patrones, ese filtro deja el 10,5% del corpus y hunde las prendas de
+cuerpo entero del 60,3% al 31,5%: castiga el tamaño, porque los errores se
+acumulan con el número de costuras mientras la tasa *por costura* es plana. El
+filtro correcto descarta solo los defectos geométricos duros — conserva el 79,6%
+y la composición casi intacta. El desarrollo está en
+[`hallazgos-corpus.md`](hallazgos-corpus.md).
 
 **La herramienta está construida**: `fashion-validator CORPUS/ --lote` recorre
 un directorio de patrones, mide y saca el manifiesto de los sanos. A ~10 ms por

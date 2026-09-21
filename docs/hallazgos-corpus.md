@@ -75,6 +75,67 @@ dependería del umbral elegido y no de la prenda. No es el caso:
 La salvedad honesta: el p90 de `esquina_aguda` es 14,9°, así que en torno a un
 10% de esas esquinas desaparecería bajando el umbral un grado. Las medianas no.
 
+## Filtrar el corpus, como lo proponía el roadmap, lo estropea
+
+El plan era quedarse con los patrones que pasan limpio y entrenar sobre ellos.
+Los limpios son 362 de 3.450, y comparados con los rechazados resultan
+sistemáticamente más simples:
+
+| Rasgo (mediana) | Limpios | Rechazados |
+| --- | ---: | ---: |
+| Paneles | 6 | 10 |
+| Costuras | 14 | 30 |
+| Bordes | 42 | 72 |
+| Bordes curvos | 25% | 25% |
+
+No es cuestión de curvatura — ese porcentaje es idéntico. Es tamaño. Y se ve
+igual por tipo de prenda: las de cuerpo entero pasan limpias el 5,5% de las
+veces y los torsos sin manga el 25,8%, casi cinco veces más.
+
+### La causa no es que las prendas complejas estén peor hechas
+
+Es la pregunta que decide qué hacer. Midiendo errores **por costura** en vez de
+por patrón:
+
+| Costuras | Patrones | % limpios | Errores/costura |
+| --- | ---: | ---: | ---: |
+| 0–10 | 466 | 29,6% | 0,264 |
+| 10–20 | 599 | 17,5% | 0,221 |
+| 20–30 | 732 | 8,5% | 0,209 |
+| 30–40 | 652 | 6,9% | 0,186 |
+| 40–55 | 662 | 1,7% | 0,191 |
+| 55+ | 339 | 0,3% | 0,177 |
+
+La tasa por costura es plana, y si acaso **baja**: las prendas grandes están
+algo mejor hechas costura a costura. El desplome del porcentaje de limpios es
+puro efecto de acumulación de un filtro binario sobre un patrón entero.
+
+Un detalle que conviene no pasar por alto: los defectos **no son independientes
+entre costuras**. Con 30 costuras y 0,209 errores por costura, la independencia
+predice un 0,4% de patrones limpios y se observa un 8,5%, veinte veces más. Hay
+patrones sistemáticamente buenos y otros sistemáticamente malos, así que sí
+existe señal de calidad por patrón — pero el filtro binario la confunde con el
+tamaño.
+
+### Qué filtro usar
+
+| Criterio | Se queda con | Cuerpo entero | Torso | Abajo |
+| --- | ---: | ---: | ---: | ---: |
+| Corpus completo | 100% | 60,3% | 26,8% | 13,0% |
+| Cero errores (lo propuesto) | 10,5% | **31,5%** | 45,6% | 22,9% |
+| Tasa ≤ 0,05 errores/costura | 13,2% | 37,5% | 44,3% | 18,2% |
+| Tasa ≤ 0,10 errores/costura | 25,8% | 48,1% | 33,3% | 18,6% |
+| **Sin defecto geométrico** | **79,6%** | **58,2%** | 26,2% | 15,6% |
+
+El filtro correcto es el último: descartar solo los patrones con un defecto
+geométrico duro. Conserva cuatro veces más datos que el filtro binario y deja la
+composición de la prenda casi intacta — 60,3% de cuerpo entero pasa a 58,2%,
+frente al 31,5% que deja el filtro propuesto.
+
+La razón es la misma que hacía engañoso el 89,5%: los desajustes sin declarar no
+son defectos, son ambigüedad de formato, y usarlos como criterio de descarte es
+lo que destruye el corpus.
+
 ## Lo que este barrido no dice
 
 - **Un lote de veinticuatro, y solo `default_body`.** La otra mitad de cada lote
