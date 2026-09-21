@@ -20,9 +20,12 @@ descargados, 96 MB escritos.
 
 | | |
 | --- | --- |
-| Lote | `GarmentCodeData_v2/garments_5000_0/default_body` |
-| Patrones extraídos | 3.450 |
-| Coste del barrido | ~35 s en un núcleo |
+| Lote | `GarmentCodeData_v2/garments_5000_0` |
+| Patrones, cuerpo neutro | 3.450 |
+| Patrones, cuerpos aleatorios | 3.307 |
+| Coste del barrido | ~35 s por lote en un núcleo |
+
+Salvo donde se diga lo contrario, los números son del cuerpo neutro.
 
 Son 115 veces la muestra de la fase 1. Y son patrones **ya filtrados por el
 pipeline de los autores**: además de los chequeos de GarmentCode, sobrevivieron
@@ -136,10 +139,50 @@ La razón es la misma que hacía engañoso el 89,5%: los desajustes sin declarar
 son defectos, son ambigüedad de formato, y usarlos como criterio de descarte es
 lo que destruye el corpus.
 
+## Los cuerpos atípicos no empeoran la geometría
+
+GarmentCodeData genera cada diseño sobre un cuerpo neutro y sobre cuerpos
+aleatorios. La hipótesis razonable era que el ajuste a medida degenerase en los
+extremos de la distribución corporal — paneles que se estrechan hasta ser
+incortables al adaptarse a una silueta poco común.
+
+No ocurre. Los agregados son casi idénticos:
+
+| | Cuerpo neutro | Cuerpos aleatorios |
+| --- | ---: | ---: |
+| Patrones | 3.450 | 3.307 |
+| Limpios | 10,5% | 10,1% |
+| Con defecto geométrico | 20,4% | 21,2% |
+| Errores por costura | 0,195 | 0,198 |
+
+Un agregado puede esconder el efecto si los dos lotes tienen diseños distintos,
+así que la comparación se hizo **pareada** sobre los 2.953 diseños presentes en
+ambos, que aísla el cuerpo dejando el diseño fijo:
+
+| Mismo diseño | Casos |
+| --- | ---: |
+| Limpio en los dos | 2.248 |
+| Roto solo en cuerpo aleatorio | 139 |
+| Roto solo en cuerpo neutro | 142 |
+| Roto en los dos | 424 |
+
+Los discordantes se reparten 139 contra 142. McNemar exacto da **p = 0,91**: no
+hay ninguna asimetría, ni siquiera pequeña. La media de defectos de más en
+cuerpo aleatorio es −0,050 por diseño, es decir, ligeramente a favor del cuerpo
+aleatorio.
+
+**Los defectos son propiedad del diseño, no del ajuste.** De los 705 diseños
+rotos en al menos un cuerpo, 424 lo están en los dos: un 60% de concordancia que
+no aparecería si el cuerpo fuera la causa.
+
+Tiene dos consecuencias prácticas. Para sanear el corpus no hace falta ponderar
+por tipo de cuerpo. Y para atribuir la culpa, los defectos vienen del programa
+paramétrico que define la prenda, no de casos límite al tomar medidas — lo que
+también los hace reproducibles y arreglables en origen.
+
 ## Lo que este barrido no dice
 
-- **Un lote de veinticuatro, y solo `default_body`.** La otra mitad de cada lote
-  son cuerpos aleatorios, que podrían comportarse distinto.
+- **Un lote de veinticuatro**, aunque con sus dos mitades de cuerpo medidas.
 - **El nivel 2 no emitió ningún veredicto.** Ningún patrón declara `orient`, así
   que el montaje es supuesto y las aberturas se miden pero no se juzgan: 3.450
   avisos de `montaje_supuesto`, uno por patrón.
