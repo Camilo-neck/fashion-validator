@@ -17,7 +17,7 @@ from .model import Limites
 
 __all__ = ["a_complejo", "rel_a_abs_2d", "segmento", "longitud",
            "radio_curvatura_min", "tangente_saliente", "angulo_entre",
-           "linealizar", "cruce_real"]
+           "linealizar", "caja", "solapan", "cruce_real"]
 
 
 def a_complejo(p) -> complex:
@@ -130,14 +130,35 @@ def linealizar(seg, n: int) -> list[Line]:
     return [Line(a, b) for a, b in zip(pts[:-1], pts[1:]) if abs(b - a) > 1e-12]
 
 
-def cruce_real(s1, s2, extremos: list[complex], lim: Limites):
-    """Punto donde s1 cruza a s2 lejos de los vertices dados, o None.
+def caja(poli: list[Line]) -> tuple[float, float, float, float]:
+    """Caja envolvente de una polilinea: (xmin, xmax, ymin, ymax)."""
+    xs = [c.real for l in poli for c in (l.start, l.end)]
+    ys = [c.imag for l in poli for c in (l.start, l.end)]
+    return min(xs), max(xs), min(ys), max(ys)
+
+
+def solapan(c1, c2, holgura: float = 0.0) -> bool:
+    """Si dos cajas no se tocan, lo que hay dentro tampoco puede cruzarse."""
+    return not (c1[1] < c2[0] - holgura or c2[1] < c1[0] - holgura
+                or c1[3] < c2[2] - holgura or c2[3] < c1[2] - holgura)
+
+
+def cruce_real(poli1: list[Line], poli2: list[Line], extremos: list[complex],
+               lim: Limites):
+    """Punto donde dos polilineas se cruzan lejos de los vertices dados, o None.
+
+    Recibe las polilineas ya calculadas, no los segmentos: linealizar es caro y
+    cada borde se compara contra todos los demas del panel.
 
     `extremos` son los vertices que los dos bordes comparten: un cruce ahi es
     como se unen, no un defecto.
     """
-    for a in linealizar(s1, lim.muestras_linealizacion):
-        for b in linealizar(s2, lim.muestras_linealizacion):
+    cajas2 = [caja([b]) for b in poli2]
+    for a in poli1:
+        ca = caja([a])
+        for b, cb in zip(poli2, cajas2):
+            if not solapan(ca, cb, lim.eps_vertice):
+                continue
             try:
                 cruces = a.intersect(b)
             except Exception:

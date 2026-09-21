@@ -29,6 +29,7 @@ puedan coser.
 - [Declarar la intención](#declarar-la-intención)
 - [Comprobaciones](#comprobaciones)
 - [Vestibilidad](#vestibilidad)
+- [Barrido de un corpus](#barrido-de-un-corpus)
 - [Salida para reparación automática](#salida-para-reparación-automática)
 - [Configuración de umbrales](#configuración-de-umbrales)
 - [Desarrollo](#desarrollo)
@@ -229,6 +230,31 @@ La parte que sí necesita simulación — drapeado, tensión, poses — no está
 implementada a propósito; el plan está en
 [`docs/nivel2-simulado.md`](docs/nivel2-simulado.md).
 
+## Barrido de un corpus
+
+El uso con más retorno no es el bucle de reparación: es filtrar el corpus de
+entrenamiento. Si 23 de cada 30 patrones que GarmentCode da por válidos tienen
+defectos, las 115.000 prendas de GarmentCodeData los tienen también, y un modelo
+entrenado sobre ellas los aprende como construcción correcta.
+
+```bash
+fashion-validator GarmentCodeData/ --lote --salida informe.json
+```
+
+Recorre el directorio, valida cada patrón y escribe el recuento por código más
+un manifiesto con los que pasan limpio, que es lo que se pasa al entrenamiento.
+No necesita GarmentCode: lee los JSON ya generados. A unos 10 ms por patrón,
+115.000 son unos 20 minutos en un núcleo.
+
+```python
+from fashion_validator.corpus import barrer
+
+informe = barrer(Path("GarmentCodeData"))
+print(informe["pct_rechazados"], informe["hallazgos_por_codigo"])
+```
+
+Un archivo ilegible se anota y el barrido sigue.
+
 ## Salida para reparación automática
 
 Cada hallazgo lleva código, severidad, la referencia exacta y los valores
@@ -268,7 +294,7 @@ pip install -e ".[dev]"
 pytest
 ```
 
-La suite tiene 36 casos que comprueban las dos direcciones: que un patrón sano
+La suite tiene 40 casos que comprueban las dos direcciones: que un patrón sano
 pase limpio y que cada defecto inyectado se detecte. Las dos importan por igual
 — la primera versión de este validador rechazaba el 100% de los patrones.
 

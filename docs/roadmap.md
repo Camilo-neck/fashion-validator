@@ -22,8 +22,13 @@ Pasar `validar()` sobre el corpus y filtrar o ponderar por puntaje corrige el
 problema en la raíz, una sola vez, antes de gastar una hora de GPU. Es el uso
 con mayor retorno y el único que hay que hacer *antes* de la fase 3.
 
-**Requiere:** acceso a GarmentCodeData (bloqueado por red en el entorno actual)
-y confirmar su licencia.
+**La herramienta está construida**: `fashion-validator CORPUS/ --lote` recorre
+un directorio de patrones, mide y saca el manifiesto de los sanos. A ~10 ms por
+patrón, las 115.000 prendas son unos 20 minutos en un núcleo.
+
+**Sigue bloqueado por**: acceso de red a GarmentCodeData y confirmar su
+licencia. No es trabajo de ingeniería; es una máquina con salida abierta y una
+tarde de leer términos.
 
 ### 2. Compuerta antes de la simulación 3D
 

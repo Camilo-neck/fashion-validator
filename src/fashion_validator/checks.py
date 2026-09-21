@@ -15,7 +15,8 @@ import math
 import numpy as np
 
 from .geometry import (a_complejo, segmento, longitud, radio_curvatura_min,
-                       tangente_saliente, angulo_entre, cruce_real)
+                       tangente_saliente, angulo_entre, linealizar, caja,
+                       solapan, cruce_real)
 from .model import Hallazgo, Limites
 
 __all__ = ["nivel0", "nivel1"]
@@ -121,11 +122,18 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
                                 medido={"vertice": vi, "angulo_grados": round(ang, 2)}))
 
         # --- auto-interseccion entre bordes
+        #
+        # Cada borde se lineariza una sola vez y las parejas cuyas cajas no se
+        # tocan se descartan sin mirarlas: era el 96% del tiempo del validador.
+        polis = [linealizar(s, lim.muestras_linealizacion) for s in segs]
+        cajas = [caja(p) for p in polis]
         for i in range(len(segs)):
             for j in range(i + 1, len(segs)):
+                if not solapan(cajas[i], cajas[j], lim.eps_vertice):
+                    continue
                 comparte = set(edges[i]["endpoints"]) & set(edges[j]["endpoints"])
                 extremos = [a_complejo(verts[vi]) for vi in comparte]
-                p = cruce_real(segs[i], segs[j], extremos, lim)
+                p = cruce_real(polis[i], polis[j], extremos, lim)
                 if p is not None:
                     out.append(Hallazgo(0, "auto_interseccion", "error",
                                         f"el borde {i} cruza al borde {j} fuera de un vertice",

@@ -136,6 +136,24 @@ def test_panel_suelto(sano):
     assert "panel_suelto" in errores(sano)
 
 
+# --- auto-interseccion ------------------------------------------------------
+
+def test_auto_interseccion():
+    """Un panel en pajarita: las dos diagonales se cruzan fuera de un vertice."""
+    panel = {
+        "vertices": [[0, 0], [20, 20], [20, 0], [0, 20]],
+        "edges": [{"endpoints": [0, 1]}, {"endpoints": [1, 2]},
+                  {"endpoints": [2, 3]}, {"endpoints": [3, 0]}],
+    }
+    spec = {"pattern": {"panels": {"p": panel}, "stitches": []}}
+    assert "auto_interseccion" in errores(spec)
+
+
+def test_panel_convexo_no_se_cruza(sano):
+    """El descarte por caja envolvente no puede inventar cruces ni perderlos."""
+    assert "auto_interseccion" not in errores(sano)
+
+
 # --- las pinzas no son defectos --------------------------------------------
 
 def test_pinza_no_se_marca_como_esquina_aguda():
@@ -378,3 +396,35 @@ def test_prenda_sellada():
                      for k in range(4)],
     }}
     assert "prenda_sellada" in errores(spec)
+
+
+# --- barrido de un corpus ---------------------------------------------------
+
+def test_barrido_separa_sano_de_roto(tmp_path, sano):
+    """El manifiesto es lo que se pasa al entrenamiento: solo lo que pasa limpio."""
+    from fashion_validator.corpus import barrer
+
+    (tmp_path / "bueno.json").write_text(json.dumps(sano), encoding="utf-8")
+    roto = copy.deepcopy(sano)
+    roto["pattern"]["stitches"][0][0]["edge"] = 999
+    (tmp_path / "malo.json").write_text(json.dumps(roto), encoding="utf-8")
+
+    informe = barrer(tmp_path, patron="*.json")
+    assert informe["medidos"] == 2
+    assert informe["sanos"] == 1 and informe["rotos"] == 1
+    assert informe["pct_rechazados"] == 50.0
+    assert [Path(x).name for x in informe["manifiesto_sanos"]] == ["bueno.json"]
+
+
+def test_barrido_no_se_cae_con_basura(tmp_path, sano):
+    """Un archivo ilegible es un resultado, no una excepcion que corta el barrido."""
+    from fashion_validator.corpus import barrer
+
+    (tmp_path / "bueno.json").write_text(json.dumps(sano), encoding="utf-8")
+    (tmp_path / "trozo.json").write_text("{esto no es json", encoding="utf-8")
+    (tmp_path / "otro.json").write_text('{"pattern": {}}', encoding="utf-8")
+
+    informe = barrer(tmp_path, patron="*.json")
+    assert informe["medidos"] == 1
+    assert len(informe["ilegibles"]) == 2
+    assert not informe["fallos_del_validador"]
