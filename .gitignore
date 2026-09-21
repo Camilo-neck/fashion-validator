@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Salidas de generacion y experimentos
+out/
+Logs/
+runs/
+*.png
+*.svg
+*.pdf
+!docs/**/*.png
+!docs/**/*.svg
+
+# Configuracion local de GarmentCode
+system.json
+
+# Editores
+.vscode/
+.idea/
+.DS_Store
