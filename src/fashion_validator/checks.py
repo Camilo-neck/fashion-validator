@@ -15,7 +15,7 @@ import math
 import numpy as np
 
 from .geometry import (a_complejo, segmento, longitud, radio_curvatura_min,
-                       tangente_saliente, cruce_real)
+                       tangente_saliente, angulo_entre, cruce_real)
 from .model import Hallazgo, Limites
 
 __all__ = ["nivel0", "nivel1"]
@@ -103,10 +103,8 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
             if len(inc) != 2:
                 continue
             (i0, ini0), (i1, ini1) = inc
-            u0 = tangente_saliente(segs[i0], ini0)
-            u1 = tangente_saliente(segs[i1], ini1)
-            dot = max(-1.0, min(1.0, u0.real * u1.real + u0.imag * u1.imag))
-            ang = math.degrees(math.acos(dot))
+            ang = angulo_entre(tangente_saliente(segs[i0], ini0),
+                               tangente_saliente(segs[i1], ini1))
             if ang >= lim.angulo_min_esquina:
                 continue
             if lim.permitir_pinzas and _es_pico_de_pinza(edges, panel, i0, i1, lim):
@@ -149,6 +147,207 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
                                     panel=nombre,
                                     medido={"ancho_cm": round(ancho, 1),
                                             "alto_cm": round(alto, 1)}))
+    return out
+
+
+# Como se emparejan los extremos de los dos bordes de una costura. `direct`
+# cose el primer extremo de uno con el primero del otro; `reversed`, con el
+# segundo. No se puede contrastar contra la geometria -- por eso hay que
+# declararlo -- asi que solo se valida que el valor exista.
+PARES = {"direct": ((0, 0), (1, 1)), "reversed": ((0, 1), (1, 0))}
+
+
+def _esquina(panel: dict, segs: list, v: int, idx: int):
+    """El otro borde que llega al vertice `v`, y el angulo que forma con `idx`.
+
+    Devuelve None si el vertice no tiene exactamente dos bordes: ese caso ya lo
+    reporta el nivel 0 como contorno abierto.
+    """
+    inc = [i for i, e in enumerate(panel["edges"]) if v in e["endpoints"]]
+    if len(inc) != 2 or idx not in inc:
+        return None
+    vecino = inc[0] if inc[1] == idx else inc[1]
+    u0 = tangente_saliente(segs[idx], panel["edges"][idx]["endpoints"][0] == v)
+    u1 = tangente_saliente(segs[vecino], panel["edges"][vecino]["endpoints"][0] == v)
+    return angulo_entre(u0, u1), vecino
+
+
+def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
+    """Continuidad del contorno libre en los cruces de costura.
+
+    En la prenda montada los dos paneles de una costura quedan a lado y lado.
+    Donde la costura termina, el contorno libre pasa del borde vecino de un
+    panel al del otro, y el angulo que recorre es la suma de los dos angulos
+    interiores: vale 180 grados cuando el escote sigue suave.
+
+    El formato de GarmentCode no dice que extremo de un borde se cose con cual
+    del otro, y no se puede deducir: la colocacion 3D del JSON es la posicion
+    inicial para el simulador y deja los paneles separados. La costura puede
+    declararlo con `orient`; sin declaracion se prueban los dos
+    emparejamientos, se elige el que mejor deja al patron y solo se reporta el
+    quiebre que ninguno explica. Cada hallazgo dice de cual de los dos casos
+    viene, porque el deducido es una cota inferior y el declarado no.
+    """
+    out: list[Hallazgo] = []
+    panels = pattern["panels"]
+    cache: dict[str, list] = {}
+
+    def segmentos(nombre: str) -> list:
+        if nombre not in cache:
+            p = panels[nombre]
+            cache[nombre] = [segmento(p, e) for e in p["edges"]]
+        return cache[nombre]
+
+    for si, st in enumerate(pattern.get("stitches", [])):
+        lados = [s for s in st if isinstance(s, dict)]
+        if len(lados) != 2:
+            continue
+
+        orient = next((l["orient"] for l in lados if l.get("orient") is not None), None)
+        if orient is not None and orient not in PARES:
+            out.append(Hallazgo(
+                1, "orientacion_incongruente", "error",
+                f"declara la orientacion '{orient}', que no es "
+                f"{' ni '.join(PARES)}",
+                costura=si, medido={"orient": orient}))
+            orient = None
+
+        try:
+            datos = [(l["panel"], panels[l["panel"]], l["edge"],
+                      panels[l["panel"]]["edges"][l["edge"]]["endpoints"])
+                     for l in lados]
+            esquinas = [[_esquina(p, segmentos(n), v, i) for v in eps]
+                        for n, p, i, eps in datos]
+        except (KeyError, IndexError, TypeError):
+            continue  # referencia rota: ya lo reporta el resto del nivel 1
+        if any(e is None for par in esquinas for e in par):
+            continue
+
+        (nA, pA, _, _), (nB, pB, _, _) = datos
+
+        def evaluar(par):
+            res = []
+            for ia, ib in par:
+                angA, vecA = esquinas[0][ia]
+                angB, vecB = esquinas[1][ib]
+                # solo el contorno libre: si un vecino esta cosido, ese cruce
+                # cae dentro de la prenda y no es el escote ni el bajo
+                if (nA, vecA) in uso or (nB, vecB) in uso:
+                    continue
+                res.append((abs(angA + angB - 180.0), vecA, vecB, angA, angB))
+            return res
+
+        if orient is not None:
+            otro = "reversed" if orient == "direct" else "direct"
+            mejor, alterna = evaluar(PARES[orient]), evaluar(PARES[otro])
+            # un borde libre solo puede continuar en otro borde libre: si la
+            # otra orientacion encaja mas, la declarada contradice la topologia
+            if len(alterna) > len(mejor):
+                out.append(Hallazgo(
+                    1, "orientacion_dudosa", "aviso",
+                    f"declara '{orient}', pero con '{otro}' el contorno libre continua "
+                    f"en {len(alterna)} cruces en vez de {len(mejor)}: un borde sin coser "
+                    f"solo puede seguir en otro borde sin coser",
+                    costura=si, medido={"declarada": orient, "cruces_declarada": len(mejor),
+                                        "alternativa": otro, "cruces_alternativa": len(alterna)}))
+        else:
+            # un borde libre solo puede continuar en otro borde libre, asi que
+            # el emparejamiento que case mas vecinos libres es el fisicamente
+            # coherente; a igualdad, el que menos quiebre deje
+            mejor = min((evaluar(PARES["direct"]), evaluar(PARES["reversed"])),
+                        key=lambda r: (-len(r), sum(x[0] for x in r)))
+
+        for desv, vecA, vecB, angA, angB in mejor:
+            if desv <= lim.angulo_max_quiebre:
+                continue
+            medido = {"desviacion_grados": round(desv, 2),
+                      "angulo_a_grados": round(angA, 2),
+                      "angulo_b_grados": round(angB, 2),
+                      "vecinos": [f"{nA}.{vecA}", f"{nB}.{vecB}"],
+                      "emparejamiento": "declarado" if orient else "deducido"}
+            recto = not (pA["edges"][vecA].get("curvature")
+                         or pB["edges"][vecB].get("curvature"))
+            if lim.permitir_esquinas_rectas and recto:
+                out.append(Hallazgo(
+                    1, "esquina_de_diseno", "info",
+                    f"el contorno gira {desv:.1f} grados entre dos bordes rectos "
+                    f"({nA}.{vecA} y {nB}.{vecB}): se interpreta como esquina "
+                    f"dibujada, no como un quiebre accidental",
+                    costura=si, medido=medido))
+                continue
+            out.append(Hallazgo(
+                1, "quiebre_en_cruce", "aviso",
+                f"al unir los paneles el contorno pasa de {nA}.{vecA} a {nB}.{vecB} "
+                f"formando {angA + angB:.1f} grados en vez de 180 ({desv:.1f} de "
+                f"quiebre): la linea no sigue suave al cruzar la costura",
+                costura=si, medido=medido))
+    return out
+
+
+TIPOS_ACABADO = ("hem", "facing", "binding", "opening", "raw")
+
+
+
+def _acabados(panels: dict, uso: dict) -> list[Hallazgo]:
+    """Acabado declarado de los bordes que no se cosen.
+
+    Un borde sin coser puede ser un dobladillo, una vista, un ribete, una
+    abertura o un borde crudo a proposito, y el formato de GarmentCode no tiene
+    donde decir cual. Es el mismo hueco que `ease` cierra para los fruncidos:
+    sin la declaracion, un bajo bien rematado y un borde olvidado son el mismo
+    dato.
+
+    El borde declara su acabado en el propio panel:
+
+        {"endpoints": [3, 4], "finish": {"type": "hem"}}
+
+    Declarado y coherente, el patron es valido. Declarado sobre un borde que si
+    se cose, se reporta `acabado_incongruente`. Sin declarar, queda un aviso.
+
+    Sin declarar NO es error, a diferencia del desajuste de costura: alli hay un
+    disparador geometrico (los largos no calzan) y aqui no, asi que marcarlo
+    como error invalidaria el 100% de los patrones existentes de golpe, que es
+    justo el fallo del que este validador ya salio una vez.
+    """
+    out: list[Hallazgo] = []
+    sin_declarar: list[str] = []
+    declarados = 0
+
+    for nombre, panel in panels.items():
+        for i, e in enumerate(panel["edges"]):
+            acabado = e.get("finish")
+            cosido = (nombre, i) in uso
+
+            if acabado is None:
+                if not cosido:
+                    sin_declarar.append(f"{nombre}.{i}")
+                continue
+
+            tipo = acabado.get("type") if isinstance(acabado, dict) else None
+            if cosido:
+                out.append(Hallazgo(
+                    1, "acabado_incongruente", "error",
+                    f"declara el acabado '{tipo}' pero el borde esta cosido en la costura "
+                    f"{uso[(nombre, i)][0]}: un borde cosido no lleva acabado",
+                    panel=nombre, borde=i,
+                    medido={"acabado": tipo, "costuras": uso[(nombre, i)]}))
+            elif tipo not in TIPOS_ACABADO:
+                out.append(Hallazgo(
+                    1, "acabado_incongruente", "error",
+                    f"declara el acabado '{tipo}', que no es ninguno de "
+                    f"{', '.join(TIPOS_ACABADO)}",
+                    panel=nombre, borde=i, medido={"acabado": tipo}))
+            else:
+                declarados += 1
+
+    if sin_declarar:
+        out.append(Hallazgo(
+            1, "acabado_no_declarado", "aviso",
+            f"{len(sin_declarar)} bordes no estan cosidos y no dicen como se rematan: "
+            f"sin esa declaracion no hay forma de distinguir un dobladillo de un borde "
+            f"olvidado",
+            medido={"cuantos": len(sin_declarar), "bordes": sin_declarar[:12],
+                    "declarados": declarados}))
     return out
 
 
@@ -258,12 +457,18 @@ def nivel1(pattern: dict, lim: Limites) -> list[Hallazgo]:
             x = padre[x]
         return x
 
-    for st in stitches:
+    en_redondo: list[int] = []
+    for si, st in enumerate(stitches):
         lados = [s for s in st if isinstance(s, dict)]
         if len(lados) == 2 and all(l["panel"] in padre for l in lados):
-            ra, rb = raiz(lados[0]["panel"]), raiz(lados[1]["panel"])
+            pa, pb = lados[0]["panel"], lados[1]["panel"]
+            ra, rb = raiz(pa), raiz(pb)
             if ra != rb:
                 padre[ra] = rb
+            elif pa != pb:
+                # los dos paneles ya estaban unidos por otro camino: al llegar
+                # aqui esta costura cierra un tubo y hay que coserla en redondo
+                en_redondo.append(si)
 
     grupos: dict[str, list[str]] = {}
     for n in panels:
@@ -275,13 +480,36 @@ def nivel1(pattern: dict, lim: Limites) -> list[Hallazgo]:
                             f"puede ser un conjunto de varias prendas o un error de costura",
                             medido={"grupos": len(grupos), "tamanos": tam}))
 
+    # --- secuencia de ensamblaje: cuanto hay que coser en redondo
+    #
+    # Siempre existe UN orden para coser un grafo conectado, asi que la
+    # pregunta util no es si existe sino cuanto cuesta. Toda costura que une
+    # dos paneles ya unidos por otro camino cierra un tubo, y coser en redondo
+    # es mas lento y necesita otro montaje de maquina. Cuales son depende del
+    # orden que se elija; cuantas son, no: es E - V + C del grafo de costuras.
+    #
+    # ponytail: la factibilidad real es accesibilidad (que la aguja llegue), y
+    # eso necesita la prenda en 3D. Esto mide el coste, no la imposibilidad.
+    if en_redondo:
+        out.append(Hallazgo(1, "costuras_en_redondo", "info",
+                            f"{len(en_redondo)} de {len(stitches)} costuras cierran un tubo y "
+                            f"hay que coserlas en redondo; las demas se pueden coser en plano",
+                            medido={"cuantas": len(en_redondo),
+                                    "un_orden_posible": en_redondo[:12]}))
+
+    # --- continuidad del contorno al cruzar una costura
+    out += _continuidad(pattern, uso, lim)
+
+    # --- acabado de los bordes que no se cosen
+    out += _acabados(panels, uso)
+
     # --- bordes libres, para revision humana
     libres = sum(1 for n, p in panels.items()
                  for i in range(len(p["edges"])) if (n, i) not in uso)
     total = sum(len(p["edges"]) for p in panels.values())
     if libres:
         out.append(Hallazgo(1, "bordes_libres", "info",
-                            f"{libres} de {total} bordes no estan cosidos; deberian ser "
-                            f"dobladillos, aberturas o vistas",
+                            f"{libres} de {total} bordes no estan cosidos: son el contorno "
+                            f"visible de la prenda",
                             medido={"libres": libres, "total": total}))
     return out

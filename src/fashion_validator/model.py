@@ -30,6 +30,16 @@ class Limites:
     permitir_pinzas: bool = True
     tol_simetria_pinza: float = 0.02  # 2% de diferencia entre los dos lados
 
+    # Continuidad en los cruces de costura: al unir dos paneles, el contorno
+    # libre pasa de uno al otro y deberia seguir suave. Se mide cuanto se
+    # desvia de los 180 grados.
+    angulo_max_quiebre: float = 20.0  # grados de quiebre tolerados en un cruce
+
+    # Una esquina entre dos bordes rectos esta dibujada, no acumulada: es el
+    # bajo de un godet o una abertura, no un escote que deberia fluir. Se
+    # reconoce y no se reporta, igual que el pico de pinza.
+    permitir_esquinas_rectas: bool = True
+
     # Por encima de este desajuste, la diferencia de longitud es tan grande
     # que casi seguro es un fruncido deliberado y no un defecto: baja a aviso.
     umbral_fruncido: float = 0.15

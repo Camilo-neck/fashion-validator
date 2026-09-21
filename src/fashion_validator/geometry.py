@@ -16,7 +16,8 @@ from svgpathtools import Line, QuadraticBezier, CubicBezier, Arc
 from .model import Limites
 
 __all__ = ["a_complejo", "rel_a_abs_2d", "segmento", "longitud",
-           "radio_curvatura_min", "tangente_saliente", "linealizar", "cruce_real"]
+           "radio_curvatura_min", "tangente_saliente", "angulo_entre",
+           "linealizar", "cruce_real"]
 
 
 def a_complejo(p) -> complex:
@@ -108,6 +109,12 @@ def tangente_saliente(seg, en_inicio: bool) -> complex:
         d = seg.end - seg.start
         u = d / abs(d) if abs(d) > 1e-12 else complex(1, 0)
     return u if en_inicio else -u
+
+
+def angulo_entre(u0: complex, u1: complex) -> float:
+    """Angulo en grados entre dos tangentes unitarias."""
+    dot = max(-1.0, min(1.0, u0.real * u1.real + u0.imag * u1.imag))
+    return math.degrees(math.acos(dot))
 
 
 def linealizar(seg, n: int) -> list[Line]:

@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from fashion_validator import validar, longitud
+from fashion_validator import validar, longitud, Limites
 
 FIXTURE = Path(__file__).parent / "fixtures" / "tshirt.json"
 
@@ -150,3 +150,152 @@ def test_pinza_no_se_marca_como_esquina_aguda():
     codigos = {h.codigo for h in validar(spec)}
     assert "pico_de_pinza" in codigos
     assert "esquina_aguda" not in codigos
+
+
+# --- continuidad al cruzar una costura --------------------------------------
+
+def _dos_paneles(vertices_b):
+    """Dos paneles cosidos por un costado. El contorno libre cruza esa costura."""
+    rect = [[0, 0], [20, 0], [20, 40], [0, 40]]
+    aristas = [{"endpoints": [0, 1]}, {"endpoints": [1, 2]},
+               {"endpoints": [2, 3]}, {"endpoints": [3, 0]}]
+    return {"pattern": {
+        "panels": {"a": {"vertices": rect, "edges": [dict(e) for e in aristas]},
+                   "b": {"vertices": vertices_b, "edges": [dict(e) for e in aristas]}},
+        "stitches": [[{"panel": "a", "edge": 1}, {"panel": "b", "edge": 3}]],
+    }}
+
+
+# el vertice 1 de `b` bajado inclina el borde vecino a la costura y quiebra el
+# contorno; el borde de la costura no se toca, asi que las longitudes calzan
+RECTO = [[0, 0], [20, 0], [20, 40], [0, 40]]
+QUEBRADO = [[0, 0], [20, -15], [20, 40], [0, 40]]
+
+
+def test_cruce_suave_no_se_reporta():
+    """Dos paneles rectos cosidos: el contorno sigue recto, no hay nada que decir."""
+    codigos = {h.codigo for h in validar(_dos_paneles(RECTO))}
+    assert "quiebre_en_cruce" not in codigos
+    assert "esquina_de_diseno" not in codigos
+
+
+def test_quiebre_en_cruce_se_detecta():
+    """Con el contorno quebrado 37 grados, el cruce se reporta como aviso."""
+    hallazgos = validar(_dos_paneles(QUEBRADO),
+                        Limites(permitir_esquinas_rectas=False))
+    quiebres = [h for h in hallazgos if h.codigo == "quiebre_en_cruce"]
+    assert len(quiebres) == 1
+    assert quiebres[0].severidad == "aviso"
+    assert quiebres[0].medido["desviacion_grados"] == pytest.approx(36.87, abs=0.1)
+
+
+def test_esquina_entre_rectas_se_interpreta_como_diseno():
+    """El mismo quiebre entre dos bordes rectos es una esquina dibujada.
+
+    Es el bajo de un godet o una abertura, no un escote que deberia fluir. Sin
+    esta excepcion toda falda con godets sale marcada.
+    """
+    codigos = {h.codigo: h for h in validar(_dos_paneles(QUEBRADO))}
+    assert "quiebre_en_cruce" not in codigos
+    assert codigos["esquina_de_diseno"].severidad == "info"
+
+
+# --- acabado de los bordes libres -------------------------------------------
+
+def _bordes_cosidos(spec):
+    return {(l["panel"], l["edge"]) for st in spec["pattern"]["stitches"] for l in st}
+
+
+def _rematar_todo(spec, tipo="hem"):
+    """Declara un acabado en cada borde que no se cose."""
+    cosidos = _bordes_cosidos(spec)
+    for nombre, panel in spec["pattern"]["panels"].items():
+        for i, e in enumerate(panel["edges"]):
+            if (nombre, i) not in cosidos:
+                e["finish"] = {"type": tipo}
+    return spec
+
+
+def test_borde_libre_sin_acabado_es_aviso(sano):
+    """El hueco de formato: un dobladillo y un borde olvidado son el mismo dato."""
+    codigos = {h.codigo: h for h in validar(sano)}
+    assert codigos["acabado_no_declarado"].severidad == "aviso"
+    assert codigos["acabado_no_declarado"].medido["cuantos"] == 12
+
+
+def test_acabado_declarado_quita_el_aviso(sano):
+    codigos = {h.codigo for h in validar(_rematar_todo(sano))}
+    assert "acabado_no_declarado" not in codigos
+
+
+def test_acabado_sobre_borde_cosido_es_error(sano):
+    """Un borde cosido no lleva acabado: las dos cosas se excluyen."""
+    st = sano["pattern"]["stitches"][0][0]
+    sano["pattern"]["panels"][st["panel"]]["edges"][st["edge"]]["finish"] = {"type": "hem"}
+    assert "acabado_incongruente" in errores(sano)
+
+
+def test_acabado_de_tipo_desconocido_es_error(sano):
+    assert "acabado_incongruente" in errores(_rematar_todo(sano, tipo="pegamento"))
+
+
+# --- secuencia de ensamblaje ------------------------------------------------
+
+def test_costuras_en_redondo_se_cuentan(sano):
+    """8 paneles y 16 costuras dejan 16 - 8 + 1 = 9 tubos que cerrar."""
+    codigos = {h.codigo: h for h in validar(sano)}
+    assert codigos["costuras_en_redondo"].medido["cuantas"] == 9
+
+
+def test_dos_paneles_se_cosen_en_plano():
+    """Una sola costura no cierra ningun tubo: todo se cose en plano."""
+    codigos = {h.codigo for h in validar(_dos_paneles(RECTO))}
+    assert "costuras_en_redondo" not in codigos
+
+
+# --- orientacion de la costura ----------------------------------------------
+
+def test_orientacion_declarada_se_usa(sano):
+    """Declarada, el hallazgo deja de ser una cota inferior."""
+    for st in sano["pattern"]["stitches"]:
+        st[0]["orient"] = "reversed"
+    quiebres = [h for h in validar(sano) if h.codigo == "quiebre_en_cruce"]
+    assert quiebres
+    assert all(h.medido["emparejamiento"] == "declarado" for h in quiebres)
+
+
+def test_sin_declarar_el_emparejamiento_es_deducido(sano):
+    quiebres = [h for h in validar(sano) if h.codigo == "quiebre_en_cruce"]
+    assert all(h.medido["emparejamiento"] == "deducido" for h in quiebres)
+
+
+def test_orientacion_contradicha_por_la_topologia(sano):
+    """La camiseta encaja en 12 cruces con `reversed` y solo en 4 con `direct`."""
+    for st in sano["pattern"]["stitches"]:
+        st[0]["orient"] = "direct"
+    dudosas = [h for h in validar(sano) if h.codigo == "orientacion_dudosa"]
+    assert dudosas
+    assert dudosas[0].severidad == "aviso"
+
+
+def test_orientacion_coherente_no_se_reporta(sano):
+    for st in sano["pattern"]["stitches"]:
+        st[0]["orient"] = "reversed"
+    assert "orientacion_dudosa" not in {h.codigo for h in validar(sano)}
+
+
+def test_orientacion_desconocida_es_error(sano):
+    sano["pattern"]["stitches"][0][0]["orient"] = "al_reves"
+    assert "orientacion_incongruente" in errores(sano)
+
+
+def test_orientacion_declarada_puede_destapar_un_quiebre():
+    """Deducir elige el emparejamiento mas favorable; declarar lo fija."""
+    spec = _dos_paneles(QUEBRADO)
+    lim = Limites(permitir_esquinas_rectas=False)
+    por_defecto = len([h for h in validar(spec, lim) if h.codigo == "quiebre_en_cruce"])
+    spec["pattern"]["stitches"][0][0]["orient"] = "direct"
+    directo = len([h for h in validar(spec, lim) if h.codigo == "quiebre_en_cruce"])
+    spec["pattern"]["stitches"][0][0]["orient"] = "reversed"
+    invertido = len([h for h in validar(spec, lim) if h.codigo == "quiebre_en_cruce"])
+    assert por_defecto <= max(directo, invertido)
