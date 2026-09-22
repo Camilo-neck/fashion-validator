@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"
+     role="img" aria-label="hilvan">
+  <title>hilvan</title>
+  <!-- El hilo pasado a puntadas largas y flojas, que es lo que es un hilvan,
+       dibujando el visto. Los dos tonos son legibles sobre fondo claro y oscuro,
+       asi que el archivo sirve para los dos temas de GitHub sin duplicarse. -->
+  <path d="M 30 144 L 98 204 L 190 96"
+        fill="none" stroke="#E4572E" stroke-width="19"
+        stroke-linecap="round" stroke-linejoin="round"
+        stroke-dasharray="30 20"/>
+  <!-- La aguja, saliendo por donde el hilo deja de verse. -->
+  <path d="M 242 26 L 195.5 96.3 L 184.5 87.7 Z"
+        fill="#8A94A6" stroke="#8A94A6" stroke-width="6" stroke-linejoin="round"/>
+</svg>

@@ -1,6 +1,11 @@
 <div align="center">
 
-# fashion-validator
+<img src="docs/logo.svg" width="104" alt="">
+
+# hilván
+
+*Hilvanar es coser con puntadas largas y flojas para comprobar que una prenda
+cae bien, antes de rematarla. Esto hace lo mismo con el patrón.*
 
 ### ¿Este patrón de costura se puede coser de verdad?
 
@@ -22,7 +27,7 @@ se entrenó, tampoco.
 ---
 
 ```console
-$ fashion-validator rand_023FMIGQK0_specification.json
+$ hilvan rand_023FMIGQK0_specification.json
 {
  "valido": false,
  "errores": 2,
@@ -132,8 +137,8 @@ GarmentCode**: lee su formato JSON, pero no depende del paquete.
 ### Línea de comandos
 
 ```bash
-fashion-validator patron_specification.json            # informe legible
-fashion-validator patron_specification.json --modelo   # errores en JSON
+hilvan patron_specification.json            # informe legible
+hilvan patron_specification.json --modelo   # errores en JSON
 ```
 
 El comando sale con código `1` si el patrón no es válido, de modo que puede
@@ -142,7 +147,7 @@ encadenarse en scripts y pipelines de CI.
 ### API de Python
 
 ```python
-from fashion_validator import validar, resumen, para_modelo, Limites
+from hilvan import validar, resumen, para_modelo, Limites
 
 hallazgos = validar(spec, Limites(ancho_rollo=140, angulo_min_esquina=12))
 
@@ -268,7 +273,7 @@ bordes. Con una medida del cuerpo, eso responde si la cabeza pasa por el escote
 sin necesidad de simular nada.
 
 ```python
-from fashion_validator import validar, Cuerpo
+from hilvan import validar, Cuerpo
 
 hallazgos = validar(spec, cuerpo=Cuerpo(head=57, hip=100))
 ```
@@ -306,7 +311,7 @@ defectos, las 115.000 prendas de GarmentCodeData los tienen también, y un model
 entrenado sobre ellas los aprende como construcción correcta.
 
 ```bash
-fashion-validator GarmentCodeData/ --lote --salida informe.json
+hilvan GarmentCodeData/ --lote --salida informe.json
 ```
 
 Recorre el directorio, valida cada patrón y escribe el recuento por código más
@@ -315,7 +320,7 @@ No necesita GarmentCode: lee los JSON ya generados. A unos 10 ms por patrón,
 115.000 son unos 20 minutos en un núcleo.
 
 ```python
-from fashion_validator.corpus import barrer
+from hilvan.corpus import barrer
 
 informe = barrer(Path("GarmentCodeData"))
 print(informe["pct_rechazados"], informe["hallazgos_por_codigo"])
@@ -392,7 +397,7 @@ proyecto del que nace este validador en [`docs/proyecto.md`](docs/proyecto.md).
 ## Estructura del repositorio
 
 ```
-src/fashion_validator/   el paquete; solo numpy y svgpathtools
+src/hilvan/   el paquete; solo numpy y svgpathtools
 tests/                   pruebas de discriminación
 research/                bancos que produjeron los números (necesitan GarmentCode)
 docs/                    hallazgos, hoja de ruta, contexto y plan del nivel 2

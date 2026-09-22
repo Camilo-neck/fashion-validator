@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, "src")
-from fashion_validator import validar
+from hilvan import validar
 
 # paleta categorica validada con el validador de dataviz (modo claro)
 AZUL, NARANJA, AQUA = "#2a78d6", "#eb6834", "#1baf7a"

@@ -11,8 +11,8 @@ import json, sys
 from collections import Counter
 from pathlib import Path
 
-from fashion_validator.corpus import validar_archivo
-from fashion_validator.model import Limites
+from hilvan.corpus import validar_archivo
+from hilvan.model import Limites
 
 # Defectos que dependen solo de la geometria del panel, no de una intencion que
 # el formato no guarda. Un desajuste de costura puede ser un fruncido legitimo;

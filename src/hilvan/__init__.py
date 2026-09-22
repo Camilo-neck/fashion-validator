@@ -4,7 +4,7 @@ Valida patrones en el formato JSON de GarmentCode y devuelve hallazgos
 estructurados, pensados tanto para una persona como para devolverselos a un
 modelo generativo que repare el patron.
 
-    from fashion_validator import validar, resumen, para_modelo
+    from hilvan import validar, resumen, para_modelo
 
     hallazgos = validar(spec)
     if not resumen(hallazgos)['valido']:

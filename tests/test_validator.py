@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from fashion_validator import validar, longitud, Limites, Cuerpo, bucles_libres
+from hilvan import validar, longitud, Limites, Cuerpo, bucles_libres
 
 FIXTURE = Path(__file__).parent / "fixtures" / "tshirt.json"
 
@@ -409,7 +409,7 @@ def test_prenda_sellada():
 
 def test_barrido_separa_sano_de_roto(tmp_path, sano):
     """El manifiesto es lo que se pasa al entrenamiento: solo lo que pasa limpio."""
-    from fashion_validator.corpus import barrer
+    from hilvan.corpus import barrer
 
     (tmp_path / "bueno.json").write_text(json.dumps(sano), encoding="utf-8")
     roto = copy.deepcopy(sano)
@@ -425,7 +425,7 @@ def test_barrido_separa_sano_de_roto(tmp_path, sano):
 
 def test_barrido_no_se_cae_con_basura(tmp_path, sano):
     """Un archivo ilegible es un resultado, no una excepcion que corta el barrido."""
-    from fashion_validator.corpus import barrer
+    from hilvan.corpus import barrer
 
     (tmp_path / "bueno.json").write_text(json.dumps(sano), encoding="utf-8")
     (tmp_path / "trozo.json").write_text("{esto no es json", encoding="utf-8")

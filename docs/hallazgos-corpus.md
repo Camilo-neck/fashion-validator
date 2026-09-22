@@ -7,7 +7,7 @@ mantiene como registro de la fase 1 y se midió sobre 30 patrones.
 Fecha: 21 de septiembre de 2026. Reproducible con la herramienta de barrido:
 
 ```bash
-fashion-validator data/garmentcodedata_0 --lote --salida informe.json
+hilvan data/garmentcodedata_0 --lote --salida informe.json
 ```
 
 ## Qué se midió

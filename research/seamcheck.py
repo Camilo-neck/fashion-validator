@@ -21,7 +21,7 @@ from assets.bodies.body_params import BodyParameters
 from pattern_sampler import assert_param_combinations
 from sampler import randomize
 
-from fashion_validator import longitud
+from hilvan import longitud
 
 
 def check_pattern(pat):

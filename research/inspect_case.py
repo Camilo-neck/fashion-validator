@@ -9,7 +9,7 @@ from pattern_sampler import assert_param_combinations
 from sampler import randomize
 
 
-from fashion_validator import validar, Limites, segmento, longitud
+from hilvan import validar, Limites, segmento, longitud
 
 
 def buscar(codigo, n=40, seed=11):

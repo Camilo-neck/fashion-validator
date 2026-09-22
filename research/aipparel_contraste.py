@@ -11,8 +11,8 @@ Uso: python contrastar.py <dir_salida> <indice.json> <dir_corpus>
 import json, math, sys
 from pathlib import Path
 
-from fashion_validator import validar
-from fashion_validator.model import Limites
+from hilvan import validar
+from hilvan.model import Limites
 
 DUROS = {"borde_degenerado", "esquina_aguda", "curvatura_excesiva",
          "excede_ancho_rollo", "auto_interseccion"}

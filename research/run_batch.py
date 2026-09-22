@@ -13,7 +13,7 @@ from pattern_sampler import assert_param_combinations
 from sampler import randomize
 
 
-from fashion_validator import validar, Limites, resumen
+from hilvan import validar, Limites, resumen
 
 
 def main(n, seed=11):

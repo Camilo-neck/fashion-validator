@@ -9,7 +9,7 @@ entrenar corrige el problema en la raiz, una sola vez.
 No necesita GarmentCode: lee los JSON ya generados. A unos 10 ms por patron,
 115.000 son unos 20 minutos en un solo nucleo.
 
-    from fashion_validator.corpus import barrer
+    from hilvan.corpus import barrer
     informe = barrer(Path("GarmentCodeData"))
     json.dump(informe, open("informe.json", "w"), indent=1)
 

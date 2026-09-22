@@ -1,7 +1,7 @@
 # Bancos de investigación
 
 Los scripts que produjeron los números de `docs/hallazgos-fase1.md`. A
-diferencia del paquete `fashion_validator`, **estos sí necesitan GarmentCode**,
+diferencia del paquete `hilvan`, **estos sí necesitan GarmentCode**,
 porque generan los patrones que luego analizan.
 
 ## Montaje
@@ -10,7 +10,7 @@ porque generan los patrones que luego analizan.
 git clone https://github.com/maria-korosteleva/GarmentCode.git
 cd GarmentCode
 pip install "numpy<2" scipy pyyaml svgwrite svgpathtools psutil matplotlib CairoSVG
-pip install -e /ruta/a/fashion-validator
+pip install -e /ruta/a/hilvan
 ```
 
 Crea un `system.json` en la raíz del clon a partir de `system.template.json`
@@ -18,7 +18,7 @@ Crea un `system.json` en la raíz del clon a partir de `system.template.json`
 scripts a la raíz del clon, o añádela al `PYTHONPATH`, y ejecútalos desde ahí:
 
 ```bash
-cp /ruta/a/fashion-validator/research/*.py .
+cp /ruta/a/hilvan/research/*.py .
 python run_batch.py 30
 ```
 

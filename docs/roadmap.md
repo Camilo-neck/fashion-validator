@@ -30,7 +30,7 @@ filtro correcto descarta solo los defectos geométricos duros — conserva el 79
 y la composición casi intacta. El desarrollo está en
 [`hallazgos-corpus.md`](hallazgos-corpus.md).
 
-**La herramienta está construida**: `fashion-validator CORPUS/ --lote` recorre
+**La herramienta está construida**: `hilvan CORPUS/ --lote` recorre
 un directorio de patrones, mide y saca el manifiesto de los sanos. A ~10 ms por
 patrón, las 115.000 prendas son unos 20 minutos en un núcleo.
 

@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fashion-validator"
+name = "hilvan"
 version = "0.1.0"
 description = "Validador de manufacturabilidad para patrones de costura generados"
 readme = "README.md"
@@ -19,7 +19,7 @@ dependencies = [
 dev = ["pytest>=7"]
 
 [project.scripts]
-fashion-validator = "fashion_validator.cli:main"
+hilvan = "hilvan.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

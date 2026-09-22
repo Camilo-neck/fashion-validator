@@ -10,7 +10,7 @@ from pattern_sampler import assert_param_combinations
 from sampler import randomize
 
 
-from fashion_validator import validar, Limites, segmento
+from hilvan import validar, Limites, segmento
 
 
 def linealizar(seg, n=40):

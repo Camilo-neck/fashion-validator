@@ -1,8 +1,8 @@
 """Interfaz de linea de comandos.
 
-    python -m fashion_validator patron.json
-    python -m fashion_validator patron.json --modelo
-    python -m fashion_validator CORPUS/ --lote --salida informe.json
+    python -m hilvan patron.json
+    python -m hilvan patron.json --modelo
+    python -m hilvan CORPUS/ --lote --salida informe.json
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ def _lote(args, lim: Limites) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        prog="fashion-validator",
+        prog="hilvan",
         description="Valida la manufacturabilidad de un patron de costura.")
     ap.add_argument("patron", help="JSON de especificacion, o un directorio con --lote")
     ap.add_argument("--lote", action="store_true",

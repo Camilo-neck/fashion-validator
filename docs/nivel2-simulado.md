@@ -1,6 +1,6 @@
 # Nivel 2 simulado: plan
 
-La mitad geométrica del nivel 2 está implementada ([`nivel2.py`](../src/fashion_validator/nivel2.py)):
+La mitad geométrica del nivel 2 está implementada ([`nivel2.py`](../src/hilvan/nivel2.py)):
 mide las aberturas de la prenda montada y juzga si el cuerpo pasa. Este
 documento define lo que falta — todo lo que necesita física — y en qué
 condiciones tiene sentido construirlo.
@@ -25,7 +25,7 @@ accesibilidad bajó aquí desde el nivel 1, donde solo se puede medir el coste
 
 ## Por qué no está hecho
 
-**1. Rompe las cuatro propiedades del paquete.** Hoy `fashion-validator` tiene
+**1. Rompe las cuatro propiedades del paquete.** Hoy `hilvan` tiene
 dos dependencias, no necesita GarmentCode, corre en CPU en milisegundos y es
 determinista. La simulación pide GPU, un motor, un avatar y parámetros de
 material. Si entra sin condiciones, el uso nº2 del [roadmap](roadmap.md) —
@@ -74,8 +74,8 @@ de referencia contra la que contrastar una muestra, no de motor del pipeline.
 Extra opcional en este mismo repositorio:
 
 ```bash
-pip install fashion-validator          # niveles 0, 1 y 2 geométrico
-pip install fashion-validator[sim]     # + nivel 2 simulado
+pip install hilvan          # niveles 0, 1 y 2 geométrico
+pip install hilvan[sim]     # + nivel 2 simulado
 ```
 
 Mantiene las cuatro propiedades del núcleo intactas y hace explícito que la

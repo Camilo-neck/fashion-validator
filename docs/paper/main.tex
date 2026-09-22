@@ -59,9 +59,9 @@ edges as short as $0.018$\,cm and corners of $0.16^\circ$. A further 69.1\%
 cannot be judged at all, because the seam format records \emph{which} edges are
 joined but not \emph{why} their lengths differ, leaving an intentional gather
 indistinguishable from a defect. We contribute three minimal format extensions
-that make this information expressible, and an open-source validator covering
-panel geometry, seam topology and geometric wearability that is deterministic,
-CPU-only and runs in about 10\,ms per pattern.
+that make this information expressible, and \textsc{Hilv\'an}, an open-source
+validator covering panel geometry, seam topology and geometric wearability that
+is deterministic, CPU-only and runs in about 10\,ms per pattern.
 
 Two results bear directly on how such a validator should be used. First, the
 obvious application --- discarding every pattern that reports an error --- is
@@ -112,9 +112,11 @@ cases, and so no validator built on it can either.
   seam orientation --- that make recoverable the intent the current
   representation discards (Section~\ref{sec:intent}); the third turns out not
   to be inferable from the file at all.
-  \item An open-source validator for panel geometry, seam topology and
-  geometric wearability, including a purely 2D criterion for tangent continuity
-  across seam crossings that needs no 3D assembly (Section~\ref{sec:method}).
+  \item \textsc{Hilv\'an}, an open-source validator for panel geometry, seam
+  topology and geometric wearability, including a purely 2D criterion for
+  tangent continuity across seam crossings that needs no 3D assembly
+  (Section~\ref{sec:method}). The name is the Spanish for a basting stitch: the
+  provisional seam sewn to check a garment before it is sewn for real.
   \item A negative result with a practical remedy: the natural way to use such
   a validator for corpus sanitization is biased against complex garments, and a
   defect-class-aware filter avoids it (Section~\ref{sec:res-filter}).
@@ -689,9 +691,9 @@ property of the design program rather than of made-to-measure fitting, which
 means they are reproducible, attributable, and fixable where they are
 introduced.
 
-\paragraph{Availability.} The validator, tests, sweep tool and figure scripts
-are available at
-\url{https://github.com/Camilo-neck/fashion-validator}, released under
+\paragraph{Availability.} \textsc{Hilv\'an}, its tests, sweep tool and figure scripts are
+available at
+\url{https://github.com/Camilo-neck/hilvan}, released under
 the MIT license. The corpus itself is not redistributed: GarmentCodeData
 declares no license, so this work reports statistics over it and cites it,
 but publishes no subset of the patterns.
