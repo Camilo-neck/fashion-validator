@@ -353,12 +353,19 @@ def test_aberturas_de_la_camiseta(sano):
     assert contornos == [42.1, 42.1, 70.1, 104.8]
 
 
-def test_sin_orient_se_mide_pero_no_se_juzga(sano):
-    """El montaje supuesto informa contornos y no emite ningun veredicto."""
+def test_sin_orient_el_veredicto_baja_a_aviso(sano):
+    """El convenio por defecto sostiene el hallazgo, pero el patron no lo afirma.
+
+    En 3.450 patrones de GarmentCodeData 'reversed' gana en 3.310 y pierde en
+    ninguno, asi que callarse seria desperdiciarlo; pero sin declaracion el
+    hallazgo no puede ser un error.
+    """
     _declarar_abertura(sano, 42.1, fits="head")
     hallazgos = [h for h in validar(sano, cuerpo=Cuerpo()) if h.nivel == 2]
     assert any(h.codigo == "montaje_supuesto" for h in hallazgos)
     assert not [h for h in hallazgos if h.severidad == "error"]
+    insuf = [h for h in hallazgos if h.codigo == "abertura_insuficiente"]
+    assert len(insuf) == 1 and insuf[0].severidad == "aviso"
 
 
 def test_abertura_insuficiente(sano):

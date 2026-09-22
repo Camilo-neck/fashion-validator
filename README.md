@@ -236,9 +236,11 @@ chequeo. Sin `stretch` ni `closure`, un escote de punto se marcaría como
 inservible — es la misma excepción que las pinzas y los godets, por cuarta vez.
 
 **El montaje depende de `orient`.** Con la orientación equivocada, los cuatro
-huecos de una camiseta salen como dos bucles de 129,6 cm. Por eso, si alguna
-costura no la declara, el nivel 2 informa contornos pero no emite ningún
-veredicto contra el cuerpo.
+huecos de una camiseta salen como dos bucles de 129,6 cm. Si alguna costura no
+la declara se usa el convenio por defecto y los veredictos bajan de error a
+aviso — medido sobre 3.450 patrones de GarmentCodeData, ese convenio gana en
+3.310 y pierde en ninguno, así que respalda el hallazgo aunque el patrón no lo
+afirme.
 
 La parte que sí necesita simulación — drapeado, tensión, poses — no está
 implementada a propósito; el plan está en

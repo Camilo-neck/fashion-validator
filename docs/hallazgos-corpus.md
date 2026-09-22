@@ -183,12 +183,35 @@ también los hace reproducibles y arreglables en origen.
 ## Lo que este barrido no dice
 
 - **Un lote de veinticuatro**, aunque con sus dos mitades de cuerpo medidas.
-- **El nivel 2 no emitió ningún veredicto.** Ningún patrón declara `orient`, así
-  que el montaje es supuesto y las aberturas se miden pero no se juzgan: 3.450
-  avisos de `montaje_supuesto`, uno por patrón.
+- **El nivel 2 juzga con reservas.** Ningún patrón declara `orient`, así que el
+  montaje usa el convenio por defecto y los veredictos bajan de error a aviso.
+  Ese convenio no es una conjetura: ver abajo.
 - **Los umbrales siguen sin calibrar** contra tela real. Las medianas están
   lejos del límite, lo que hace el resultado robusto al valor exacto, pero no
   convierte la hipótesis en medida.
+
+## El convenio de orientación se sostiene en todo el corpus
+
+El montaje depende de qué extremo de un borde se cose con cuál, y el formato no
+lo dice. El validador usa `reversed` por defecto, un supuesto que hasta ahora se
+apoyaba en dos prendas de referencia.
+
+Medido sobre los 3.450 patrones con el criterio de que un borde libre solo puede
+continuar en otro borde libre:
+
+| | Patrones | % |
+| --- | ---: | ---: |
+| Favorecen `reversed` | 3.310 | 95,9 |
+| Favorecen `direct` | **0** | 0,0 |
+| Empate | 140 | 4,1 |
+
+Cero contraejemplos, con una mediana de 8 cruces de ventaja. Deja de ser una
+conjetura y pasa a ser un convenio medido de la salida de GarmentCode.
+
+No lo convierte en garantía del formato — otro generador podría usar otro orden
+— así que el validador sigue marcando el montaje como supuesto. Pero en vez de
+callarse, emite el veredicto rebajado a aviso: el corpus lo respalda aunque el
+patrón no lo afirme.
 
 ## Licencia
 
