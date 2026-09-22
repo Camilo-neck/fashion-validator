@@ -74,6 +74,12 @@ over 2{,}953 designs rendered on both a neutral and a randomized body finds no
 effect of body shape on defect rate (McNemar $p = 0.91$): the defects belong to
 the parametric design, not to the made-to-measure fit, and are therefore
 reproducible and fixable at source.
+
+Applying the same measurement to a published generative model, none of 200
+patterns produced by AIpparel is manufacturable. The model emits patterns of the
+same complexity as the corpus --- 31.6 seams per pattern against 31.5 --- while
+88\% of its seams join edges of unequal length: it does not sew less, it sews
+worse.
 \end{abstract}
 
 \section{Introduction}
@@ -116,6 +122,10 @@ cases, and so no validator built on it can either.
   \item A null result: made-to-measure fitting to randomized bodies does not
   degrade pattern geometry (Section~\ref{sec:res-body}), which localizes the
   defects to the parametric design program.
+  \item The metric applied to a released generative model: none of 200 patterns
+  from AIpparel is manufacturable, and the failure is localized to seam length
+  agreement rather than to garment complexity or to the conditioning modality
+  (Section~\ref{sec:res-gen}).
   \item A calibration account, with three independent instances, arguing that
   suppressing legitimate construction is the harder half of the problem
   (Section~\ref{sec:calibration}).
@@ -139,7 +149,9 @@ GarmentCode's space. AIpparel~\citep{aipparel} instead tokenizes geometry
 directly as drawing commands (\code{MOVE}, \code{LINE}, \code{CURVE},
 \code{CUBIC}, \code{ARC}) with seams encoded as labels shared between edges.
 This breaks the parametric ceiling but offers no validity guarantee; its own
-code defines decoding error types for malformed sequences.
+code defines decoding error types for malformed sequences. Because seams are
+labels rather than constraints, nothing ties the two edges they join to a common
+length --- a gap we measure in Section~\ref{sec:res-gen}.
 
 \paragraph{What existing systems check.}
 GarmentCode performs two checks: pairwise self-intersection of edges within a
@@ -346,9 +358,27 @@ cleaner than one drawn by sampling the parameter space directly, where we
 measured only 30\% of 60 random designs producing a pattern the generator
 itself accepts.
 
+\paragraph{Generated patterns.} To apply the same measurement to a generator we
+use AIpparel~\citep{aipparel}, whose public checkpoint emits pattern geometry
+directly --- vertices and stitches rather than design parameters --- so its
+outputs enter the validator without an intermediate synthesis step. We sample
+100 garments from the corpus batch above and query the model twice for each: once
+from the front render the corpus publishes, and once from a description derived
+from that garment's own design parameters. The pairing is deliberate. All three
+groups describe the same 100 garments, so the comparison isolates the
+conditioning modality rather than the draw of garments, and the corpus patterns
+themselves serve as a ground-truth column measured by the same validator ---
+without which a rate of zero would not distinguish a failing model from an
+unreachable bar. Inference ran on a single 16\,GB GPU at roughly 10\,s per
+sample. The released checkpoint is stored in fp32 while the model instantiates
+in bf16, so loading it with \code{torch.load} materializes 25\,GiB of anonymous
+memory; memory-mapping the file instead keeps the resident set under 1.5\,GiB
+and makes the run fit.
+
 \paragraph{Reproducibility.} All measurements run on CPU with fixed thresholds;
 the validator, its 40-case test suite, the sweep tool and the scripts that
-generate the figures in this paper from the corpus are released together.
+generate the figures in this paper from the corpus are released together, as
+are the four scripts behind the generator experiment.
 
 \paragraph{A note on the dataset's license.} GarmentCodeData states no license
 in its distribution, its documentation, or its project page, and its repository
@@ -503,6 +533,61 @@ which would not arise if the body were the cause. \textbf{The defects belong to
 the parametric design, not to the fit}, which makes them reproducible and
 fixable at source, and means corpus sanitization need not weight by body type.
 
+\subsection{Manufacturability of generated patterns}
+\label{sec:res-gen}
+
+The corpus measurement bounds what a model trained on it can learn. The
+complementary question is what a model actually emits. Table~\ref{tab:generated}
+reports AIpparel on the 100 paired garments of Section~\ref{sec:setup}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+& Manufacturable & Seams & Open seams \\
+\midrule
+AIpparel, from image & \textbf{0 / 100} & 31.6 & 88\% \\
+AIpparel, from text  & \textbf{0 / 100} & 26.8 & 86\% \\
+Corpus (ground truth) & 12 / 100 & 31.5 & 33\% \\
+\bottomrule
+\end{tabular}
+\caption{Manufacturability of generated patterns against the corpus patterns
+they were conditioned on. ``Seams'' is the mean seam count per pattern;
+``open seams'' the fraction joining edges of unequal length with no declared
+gather.}
+\label{tab:generated}
+\end{table}
+
+None of the 200 generated patterns is manufacturable. With zero successes in
+200 trials the 95\% upper confidence bound is 1.5\%, so the rate is low
+regardless of how the run happened to fall.
+
+The headline is less informative than the mechanism. A count of errors per
+pattern rewards whichever model emits fewer seams, so it cannot be compared
+across groups; the per-seam rate can. AIpparel produces patterns of
+\emph{the same complexity} as the corpus --- 31.6 seams against 31.5 --- and
+fails at 88\% of them, against 33\% for the corpus. The model does not sew less;
+it sews worse. This is legible in the architecture: the two edges of a seam are
+emitted as independent vertex predictions and nothing in the representation
+couples their lengths. That a pattern \emph{depicts} the requested garment and
+that its seams \emph{close} are distinct objectives, and only the first is
+trained.
+
+The six-point gap between image conditioning (23\% free of hard defects) and
+text conditioning (17\%) does not survive the paired test it invites. Of the 100
+garments, 17 are clean only from the image and 11 only from the text; an exact
+McNemar test on the 28 discordant cases gives $p = 0.345$. On this evidence the
+conditioning modality does not change manufacturability, which is consistent
+with the failure being a property of the output head rather than of how well the
+garment was understood.
+
+Two cautions attach to this number. The descriptions are synthetic, derived from
+design parameters rather than written by a person; were they worse than natural
+language, that would penalize the text condition, which is precisely the one
+that showed no difference. More importantly, AIpparel was trained on
+GarmentCodeData and these garments are drawn from it, so if they appeared in its
+training set, 0\% is the benign case rather than the adversarial one.
+
 \subsection{Runtime}
 
 Validation costs about $10$\,ms per pattern on one CPU core (11.0\,ms and
@@ -530,7 +615,13 @@ care: the naive filter trades a visible bias for an invisible one.
 \paragraph{Reporting manufacturability as a metric.} The fraction of
 manufacturable outputs is comparable, reproducible and GPU-free, and the field
 currently does not report it. We suggest it belongs alongside the geometric
-reconstruction metrics these systems already publish.
+reconstruction metrics these systems already publish. Section~\ref{sec:res-gen}
+shows why the two do not substitute for each other: a model can place panels
+that reconstruct the target garment well and still leave nearly every seam
+unclosable, because no reconstruction metric is sensitive to whether two edges
+that must be sewn together have the same length. Reporting the per-seam rate
+alongside the per-pattern fraction is worth the extra line, since the first is
+comparable across models of different output complexity and the second is not.
 
 \paragraph{Format over checker.} Three of our contributions are format
 extensions rather than checks, and we think that ordering reflects the problem.
@@ -565,10 +656,16 @@ since without measured fabric parameters they would assert something unverified.
 Finally, continuity findings are a lower bound wherever \code{orient} is
 undeclared, which on existing corpora is everywhere.
 
-\paragraph{Single generator studied.} All measurements are on GarmentCode
-output. Conclusions about the expressive ceilings of ChatGarment and AIpparel
-are architectural, drawn from reading their code, as their weights were
-unavailable in our environment.
+\paragraph{One generator measured, not a comparison.} The corpus measurements
+are on GarmentCode output and the generative measurement is on a single AIpparel
+checkpoint over 100 garments, so Table~\ref{tab:generated} is a measurement, not
+a ranking. Extending it to ChatGarment is not symmetric work: that model emits
+design parameters rather than geometry, so its outputs must pass through
+GarmentCode before they can be validated, and the resulting number would
+characterize the model-plus-synthesizer pair rather than the model. That
+asymmetry has to be declared for the comparison to mean anything. Our remaining
+claims about the expressive ceilings of these architectures are structural,
+drawn from reading their code.
 
 \section{Conclusion}
 
@@ -578,6 +675,12 @@ five published patterns cannot be manufactured, and two thirds more cannot be
 judged because the format does not record whether a seam mismatch was wanted.
 We release a deterministic, CPU-only validator, three format extensions that
 make that intent expressible, and the benchmarks behind these numbers.
+
+The same measurement applied to a released model returns zero manufacturable
+patterns in 200, at the same seam complexity as the corpus it was trained on.
+The defect is specific --- edges that must be sewn together are predicted
+independently and do not end up the same length --- which is the kind of failure
+a metric can drive out and a reconstruction loss cannot see.
 
 Two findings should change how such a tool is used. Filtering a training corpus
 on ``no errors'' is worse than not filtering, because it selects for small
