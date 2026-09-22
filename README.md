@@ -121,6 +121,13 @@ predicciones independientes y nada los obliga a medir lo mismo. El modo de
 entrada no cambia el resultado (McNemar pareado, p = 0,345). Detalle y cautelas
 en [`docs/hallazgos-aipparel.md`](docs/hallazgos-aipparel.md).
 
+Medir un modelo que emite *parámetros* en vez de geometría exige pasar su salida
+por GarmentCode antes de validarla, así que el número mediría la pareja. Pasando
+los parámetros verdaderos de esas 100 prendas por el mismo sintetizador se ve
+cuánto aporta: reproduce el veredicto del patrón publicado en **99 de 100**. La
+asimetría es una cota de un punto, no un agujero
+([`docs/hallazgos-sintetizador.md`](docs/hallazgos-sintetizador.md)).
+
 ## Instalación
 
 Requisitos: Python 3.10 o superior.

@@ -53,6 +53,17 @@ def parchear(chatgarment, garmentcode):
     p.write_text(s)
     print(f"  + ruta de GarmentCodeRC -> {gc}")
 
+    # --- 3. deepspeed tambien se importa arriba del modulo de entrenamiento,
+    # del que la inferencia solo saca las tres dataclasses de argumentos. Sus
+    # usos reales estan dentro de funciones que solo corre el entrenamiento.
+    p = cg / "llava" / "train" / "train_garmentcode_outfit.py"
+    s = p.read_text()
+    print("train_garmentcode_outfit.py:")
+    p.write_text(cambiar(
+        s, "\nimport deepspeed\n",
+        "\n# import deepspeed  # solo hace falta para entrenar\n",
+        "sin deepspeed al importar"))
+
     # --- 2, 3. las dos rutas de inferencia ----------------------------------
     for nombre in ("evaluate_garment_v2_textgen_1float.py",
                    "evaluate_garment_v2_imggen_1float.py"):

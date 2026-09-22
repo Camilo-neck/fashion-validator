@@ -96,8 +96,18 @@ costuras sin cerrar contra el 33% del ground truth. Está en
 
 Lo que falta para que sea una *comparación* y no una medida suelta es el segundo
 modelo. ChatGarment genera parámetros, no geometría, así que hay que pasarlos por
-GarmentCode antes de validar — y entonces el número mide la pareja modelo+GarmentCode,
-no el modelo. Esa asimetría hay que declararla o el titular sería tramposo.
+GarmentCode antes de validar — y entonces el número mide la pareja
+modelo+GarmentCode, no el modelo.
+
+**Esa asimetría ya no es una advertencia, es una cota.** Pasando los parámetros
+verdaderos de las mismas 100 prendas por GarmentCodeRC, el sintetizador reproduce
+el veredicto del patrón publicado en 99 de 100 y mueve la manufacturabilidad del
+12% al 13%. Un modelo de parámetros se puntúa contra esa columna, no contra el
+corpus. Está en [`hallazgos-sintetizador.md`](hallazgos-sintetizador.md).
+
+La cadena entera —etiquetas, ChatGarment, GarmentCodeRC, validador— está montada
+y probada de punta a punta sobre 3 prendas; lo que falta son unas 4 horas de GPU
+para las 100 por cada modalidad.
 
 ## Qué falta construir
 

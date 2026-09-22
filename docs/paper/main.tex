@@ -660,11 +660,18 @@ undeclared, which on existing corpora is everywhere.
 \paragraph{One generator measured, not a comparison.} The corpus measurements
 are on GarmentCode output and the generative measurement is on a single AIpparel
 checkpoint over 100 garments, so Table~\ref{tab:generated} is a measurement, not
-a ranking. Extending it to ChatGarment is not symmetric work: that model emits
-design parameters rather than geometry, so its outputs must pass through
-GarmentCode before they can be validated, and the resulting number would
-characterize the model-plus-synthesizer pair rather than the model. That
-asymmetry has to be declared for the comparison to mean anything. Our remaining
+a ranking. Extending it to a parameter-emitting model such as ChatGarment is not
+symmetric work: its outputs must pass through GarmentCode before they can be
+validated, so the resulting number characterizes the model-plus-synthesizer pair
+rather than the model. We can now bound the second term. Passing the
+\emph{ground-truth} design parameters of the same 100 garments through
+GarmentCodeRC --- the refined GarmentCode fork that ChatGarment ships with ---
+reproduces the published pattern's verdict on 99 of 100 garments, its
+hard-defect status on 98, and its exact error count on 90; in aggregate the
+synthesizer moves manufacturability from 12\% to 13\%. The asymmetry is
+therefore a known offset of about one percentage point rather than an unmeasured
+confound, and a parameter-emitting model should be scored against that
+reconstruction baseline rather than against the published corpus. Our remaining
 claims about the expressive ceilings of these architectures are structural,
 drawn from reading their code.
 

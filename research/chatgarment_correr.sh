@@ -7,14 +7,18 @@
 # Son los mismos argumentos de scripts/v1_5/*.sh de los autores menos tres:
 # sin `deepspeed` como lanzador (la inferencia es un .generate() sobre una sola
 # GPU), sin `--deepspeed zero2.json`, y con `--report_to none` en vez de wandb.
-# Los pesos viven en D: y no dentro del disco virtual de WSL, que se llena
-# contra el espacio libre de C:.
+#
+# El checkpoint de 15 GB vive fuera del disco virtual de WSL, que crece contra
+# el espacio libre de C: aunque `df` dentro de WSL diga que sobran cientos de
+# giga. La cache de HuggingFace se queda dentro porque usa enlaces simbolicos
+# que una copia a NTFS duplicaria.
 set -e
 
 MODO=${1:?imagen|texto}
 ENTRADA=${2:?ruta de entrada}
 CG=${CG:-$HOME/chatgarment/ChatGarment}
 PESOS=${PESOS:-/mnt/d/chatgarment}
+export HF_HOME=${HF_HOME:-$HOME/chatgarment/hf}
 
 case "$MODO" in
   imagen) GUION=scripts/evaluate_garment_v2_imggen_1float.py ;;
@@ -23,7 +27,6 @@ case "$MODO" in
 esac
 
 cd "$CG"
-export HF_HOME="$PESOS/hf"
 export TOKENIZERS_PARALLELISM=false
 
 # El script busca el checkpoint en una ruta relativa fija; el enlace deja el

@@ -61,7 +61,8 @@ salidas pasan por GarmentCodeRC antes de poder validarse:
 `chatgarment_reconstruir.py` es lo que separa el modelo del sintetizador. Sin
 esa columna, un defecto en la salida de ChatGarment no se sabe si lo puso el
 modelo o el programa que dibuja el patrón. Medido sobre las 100 prendas, el
-sintetizador coincide con el original en 99 de 100 veredictos.
+sintetizador coincide con el original en 99 de 100 veredictos; el desarrollo
+está en [`docs/hallazgos-sintetizador.md`](../docs/hallazgos-sintetizador.md).
 
 `aipparel_entradas.py --demo`, `chatgarment_entradas.py --demo` y
 `chatgarment_medir.py --demo` comprueban su lógica sin tocar el corpus.
