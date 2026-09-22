@@ -2,19 +2,54 @@
 
 # fashion-validator
 
-**Validador de manufacturabilidad para patrones de costura generados.**
+### ¿Este patrón de costura se puede coser de verdad?
+
+Un linter para patrones 2D. Mide la geometría de cada panel, el grafo de
+costuras y la vestibilidad de la prenda montada, y explica cada fallo en un
+formato que un modelo puede leer para corregirse.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![Licencia](https://img.shields.io/badge/licencia-MIT-green)](#licencia)
 [![Estado](https://img.shields.io/badge/estado-alfa-orange)](#estado-y-límites-conocidos)
-[![Licencia](https://img.shields.io/badge/licencia-por%20definir-lightgrey)](#licencia)
+[![CPU](https://img.shields.io/badge/CPU--only-~10%20ms%20por%20patrón-informational)](#barrido-de-un-corpus)
+
+**0 de 200** patrones generados por un modelo del estado del arte son
+manufacturables.&nbsp;&nbsp;·&nbsp;&nbsp;**1 de cada 5** del corpus con el que
+se entrenó, tampoco.
 
 </div>
 
 ---
 
-`fashion-validator` comprueba si un patrón de costura generado se puede fabricar
-de verdad y explica qué está mal en un formato que un modelo puede consumir para
-corregirlo.
+```console
+$ fashion-validator rand_023FMIGQK0_specification.json
+{
+ "valido": false,
+ "errores": 2,
+ "avisos": 11,
+ "por_codigo": {
+  "desajuste_no_declarado": 2,
+  "acabado_no_declarado": 1,
+  "fruncido_no_declarado": 5,
+  "quiebre_en_cruce": 4,
+  "montaje_supuesto": 1,
+  "bordes_libres": 1,
+  "costuras_en_redondo": 1,
+  "abertura": 4
+ }
+}
+
+ERROR  desajuste_no_declarado [costura 21]: los bordes miden 122.77 y 109.69 cm (10.6% de diferencia) y no hay declaracion de fruncido o embebido
+AVISO  quiebre_en_cruce [costura 3]: al unir los paneles el contorno pasa de right_ftorso.3 a right_btorso.2 formando 230.8 grados en vez de 180 (50.8 de quiebre): la linea no sigue suave al cruzar la costura
+INFO   costuras_en_redondo: 14 de 27 costuras cierran un tubo y hay que coserlas en redondo; las demas se pueden coser en plano
+…                                                              (16 hallazgos mas)
+```
+
+Ese patrón sale del corpus publicado de GarmentCode: ya filtrado por sus
+autores, ya superviviente de la simulación física. Aun así dos de sus costuras
+unen bordes de longitudes distintas —cosidos, no cierran— y el contorno da un
+quiebre de 50° al cruzar el costado. El comando termina con código `1`, así que
+encadena en un pipeline igual que cualquier linter.
 
 Nace de un proyecto de diseño de moda AI-First: un modelo genera los patrones 2D
 a partir de texto o imágenes y la simulación 3D la hacen herramientas existentes.
