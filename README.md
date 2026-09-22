@@ -64,6 +64,23 @@ La metodología está en
 [`docs/hallazgos-corpus.md`](docs/hallazgos-corpus.md); la fase 1, sobre 30
 patrones, en [`docs/hallazgos-fase1.md`](docs/hallazgos-fase1.md).
 
+### Y lo que genera un modelo del estado del arte
+
+La misma vara aplicada a [AIpparel](https://georgenakayama.github.io/AIpparel/)
+sobre 100 prendas del corpus, cada una pedida por imagen y por texto:
+
+| | Manufacturable | Costuras que no cierran |
+| --- | ---: | ---: |
+| AIpparel, desde imagen | **0 de 100** | 88% |
+| AIpparel, desde texto | **0 de 100** | 86% |
+| Corpus (ground truth) | 12 de 100 | 33% |
+
+Genera patrones de la misma complejidad que el corpus —31,6 costuras por patrón
+contra 31,5— y falla en casi todas: los dos bordes de una costura salen de
+predicciones independientes y nada los obliga a medir lo mismo. El modo de
+entrada no cambia el resultado (McNemar pareado, p = 0,345). Detalle y cautelas
+en [`docs/hallazgos-aipparel.md`](docs/hallazgos-aipparel.md).
+
 ## Instalación
 
 Requisitos: Python 3.10 o superior.

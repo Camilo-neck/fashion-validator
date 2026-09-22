@@ -88,6 +88,17 @@ Publicar el número para los modelos existentes es probablemente el camino más
 corto a que el repositorio se use, y una carta de presentación para las
 conversaciones con patronistas.
 
+**Hecho para el primer modelo**: AIpparel, 0 de 200 patrones manufacturables
+sobre 100 prendas del corpus pedidas por imagen y por texto, con el 88% de las
+costuras sin cerrar contra el 33% del ground truth. Está en
+[`hallazgos-aipparel.md`](hallazgos-aipparel.md), con los scripts en
+[`research/`](../research/).
+
+Lo que falta para que sea una *comparación* y no una medida suelta es el segundo
+modelo. ChatGarment genera parámetros, no geometría, así que hay que pasarlos por
+GarmentCode antes de validar — y entonces el número mide la pareja modelo+GarmentCode,
+no el modelo. Esa asimetría hay que declararla o el titular sería tramposo.
+
 ## Qué falta construir
 
 Ordenado por dependencias: lo de arriba no necesita nada externo.

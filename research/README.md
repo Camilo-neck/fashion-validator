@@ -36,6 +36,19 @@ Warp) no se usa aquí.
 | `inspect_case.py` | Aísla casos de un código concreto para revisarlos a mano |
 | `check_arc_fp.py` | Contrasta intersecciones de arcos exactas contra linealizadas |
 
+Los `aipparel_*` no usan GarmentCode sino el repositorio de AIpparel y su
+checkpoint, y son los que produjeron `docs/hallazgos-aipparel.md`:
+
+| Script | Qué hace |
+| --- | --- |
+| `aipparel_traer_renders.py` | Baja renders y `design_params` de N prendas del corpus |
+| `aipparel_entradas.py` | Arma el JSON de inferencia: cada prenda como imagen y como texto |
+| `aipparel_medir.py` | Mide los tres grupos con la misma vara |
+| `aipparel_contraste.py` | McNemar pareado y tasa de desajuste por costura |
+
+`aipparel_entradas.py --demo` comprueba la generación de descripciones sin
+tocar el corpus.
+
 `inspect_case.py` y `check_arc_fp.py` existen porque hicieron falta: la
 primera versión del validador rechazaba el 100% de los patrones, y solo
 mirando los casos uno por uno se vio que estaba leyendo las pinzas como
