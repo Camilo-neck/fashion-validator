@@ -381,8 +381,12 @@ puedes compartirlo.
 
 ## Licencia
 
-Sin definir todavía. GarmentCode se distribuye bajo licencia MIT; este
-repositorio no incluye código suyo, solo lee su formato.
+MIT — ver [`LICENSE`](LICENSE). GarmentCode se distribuye también bajo MIT;
+este repositorio no incluye código suyo, solo lee su formato.
+
+GarmentCodeData no declara licencia en ninguna parte, así que aquí se publican
+medidas y estadísticas sobre el corpus, con su cita, pero ningún subconjunto de
+los patrones.
 
 ## Agradecimientos
 
