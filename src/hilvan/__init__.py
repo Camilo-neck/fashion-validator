@@ -16,11 +16,12 @@ from __future__ import annotations
 from .checks import nivel0, nivel1
 from .nivel2 import nivel2, bucles_libres
 from .geometry import longitud, segmento
-from .model import (Cuerpo, Hallazgo, Limites, SEVERIDAD_ORDEN, para_modelo,
-                    resumen)
+from .model import (Cuerpo, DUROS, Hallazgo, Limites, SEVERIDAD_ORDEN,
+                    para_modelo, resumen)
 
 __all__ = ["validar", "resumen", "para_modelo", "Limites", "Cuerpo", "Hallazgo",
-           "nivel0", "nivel1", "nivel2", "bucles_libres", "longitud", "segmento"]
+           "DUROS", "nivel0", "nivel1", "nivel2", "bucles_libres", "longitud",
+           "segmento"]
 
 __version__ = "0.1.0"
 

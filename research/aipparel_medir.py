@@ -11,14 +11,8 @@ import json, sys
 from collections import Counter
 from pathlib import Path
 
+from hilvan import DUROS, Limites
 from hilvan.corpus import validar_archivo
-from hilvan.model import Limites
-
-# Defectos que dependen solo de la geometria del panel, no de una intencion que
-# el formato no guarda. Un desajuste de costura puede ser un fruncido legitimo;
-# un borde de 0,18 mm no se puede cortar en ninguna lectura.
-DUROS = {"borde_degenerado", "esquina_aguda", "curvatura_excesiva",
-         "excede_ancho_rollo", "auto_interseccion"}
 
 SALIDA, INDICE, CORPUS = (Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))
 lim = Limites()

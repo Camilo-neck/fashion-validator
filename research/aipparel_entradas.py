@@ -8,8 +8,6 @@ numera las salidas por posicion en la lista.
 import json, re, sys, yaml
 from pathlib import Path
 
-LOTE = Path(sys.argv[1])
-
 
 def palabras(x):
     t = re.sub(r"(?<!^)(?=[A-Z])", " ", str(x)).lower()
@@ -61,23 +59,27 @@ def demo():
     print("demo ok")
 
 
-if __name__ == "__main__" and sys.argv[1] == "--demo":
-    demo()
-    sys.exit()
+def main(lote):
+    prendas = sorted(p.name.split("_")[1] for p in lote.glob("*_render_front.png"))
+    entradas, indice = [], []
+    for modo in ("image", "description"):
+        for pid in prendas:
+            if modo == "image":
+                entradas.append({"type": "image",
+                                 "inputs": {"image_path": str(lote / f"rand_{pid}_render_front.png")}})
+            else:
+                d = yaml.safe_load((lote / f"rand_{pid}_design_params.yaml").read_text())["design"]
+                entradas.append({"type": "description", "inputs": {"description": describir(d)}})
+            indice.append({"sample": len(indice), "prenda": pid, "modo": modo})
 
-prendas = sorted(p.name.split("_")[1] for p in LOTE.glob("*_render_front.png"))
-entradas, indice = [], []
-for modo in ("image", "description"):
-    for pid in prendas:
-        if modo == "image":
-            entradas.append({"type": "image",
-                             "inputs": {"image_path": str(LOTE / f"rand_{pid}_render_front.png")}})
-        else:
-            d = yaml.safe_load((LOTE / f"rand_{pid}_design_params.yaml").read_text())["design"]
-            entradas.append({"type": "description", "inputs": {"description": describir(d)}})
-        indice.append({"sample": len(indice), "prenda": pid, "modo": modo})
+    (lote / "inference_200.json").write_text(json.dumps(entradas, indent=2))
+    (lote / "indice.json").write_text(json.dumps(indice, indent=2))
+    print(f"{len(entradas)} entradas ({len(prendas)} prendas x 2 modos)")
+    print("ejemplo de descripcion:", entradas[len(prendas)]["inputs"]["description"])
 
-(LOTE / "inference_200.json").write_text(json.dumps(entradas, indent=2))
-(LOTE / "indice.json").write_text(json.dumps(indice, indent=2))
-print(f"{len(entradas)} entradas ({len(prendas)} prendas x 2 modos)")
-print("ejemplo de descripcion:", entradas[len(prendas)]["inputs"]["description"])
+
+if __name__ == "__main__":
+    if sys.argv[1] == "--demo":
+        demo()
+    else:
+        main(Path(sys.argv[1]))

@@ -435,3 +435,24 @@ def test_barrido_no_se_cae_con_basura(tmp_path, sano):
     assert informe["medidos"] == 1
     assert len(informe["ilegibles"]) == 2
     assert not informe["fallos_del_validador"]
+
+
+def test_duros_son_codigos_que_el_validador_emite():
+    """DUROS decide que se filtra de un corpus: un codigo mal escrito ahi no
+
+    falla, simplemente deja pasar el defecto. Este test ata la lista a los
+    codigos que checks.py construye de verdad.
+    """
+    import re
+    from pathlib import Path
+
+    import hilvan
+    from hilvan import DUROS
+
+    fuente = Path(hilvan.__file__).parent
+    emitidos = set()
+    for f in fuente.glob("*.py"):
+        emitidos |= set(re.findall(r'Hallazgo\(\s*\d+,\s*"([a-z_]+)"', f.read_text(encoding="utf-8")))
+
+    assert emitidos, "no se encontro ningun Hallazgo construido"
+    assert DUROS <= emitidos, f"codigos inexistentes en DUROS: {sorted(DUROS - emitidos)}"

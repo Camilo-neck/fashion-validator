@@ -7,7 +7,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Any
 
 __all__ = ["Limites", "Cuerpo", "Hallazgo", "resumen", "para_modelo",
-           "SEVERIDAD_ORDEN"]
+           "SEVERIDAD_ORDEN", "DUROS"]
 
 
 @dataclass
@@ -80,6 +80,15 @@ class Cuerpo:
 
 
 SEVERIDAD_ORDEN = {"error": 0, "aviso": 1, "info": 2}
+
+# Defectos que dependen solo de la geometria del panel, no de una intencion que
+# el formato no guarda. Un desajuste de costura puede ser un fruncido legitimo;
+# un borde de 0,18 mm no se puede cortar bajo ninguna lectura. Es la separacion
+# que hace util el filtro de corpus: quedarse con todo salvo esto conserva el
+# 79,6% de GarmentCodeData sin sesgar contra las prendas grandes, mientras que
+# filtrar por "cero errores" deja el 10,5% y castiga el tamano.
+DUROS = frozenset({"borde_degenerado", "esquina_aguda", "curvatura_excesiva",
+                   "excede_ancho_rollo", "auto_interseccion"})
 
 
 @dataclass

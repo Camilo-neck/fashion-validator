@@ -46,8 +46,25 @@ checkpoint, y son los que produjeron `docs/hallazgos-aipparel.md`:
 | `aipparel_medir.py` | Mide los tres grupos con la misma vara |
 | `aipparel_contraste.py` | McNemar pareado y tasa de desajuste por costura |
 
-`aipparel_entradas.py --demo` comprueba la generación de descripciones sin
-tocar el corpus.
+Los `chatgarment_*` usan el repositorio de ChatGarment y
+[GarmentCodeRC](https://github.com/biansy000/GarmentCodeRC), su fork de
+GarmentCode. ChatGarment emite parámetros de diseño y no geometría, así que sus
+salidas pasan por GarmentCodeRC antes de poder validarse:
+
+| Script | Qué hace |
+| --- | --- |
+| `chatgarment_parches.py` | Adapta el clon al hardware local y quita la llamada a GPT-4o |
+| `chatgarment_entradas.py` | Arma el dict de etiquetas desde los `design_params` |
+| `chatgarment_reconstruir.py` | Pasa los parámetros *verdaderos* por GarmentCodeRC: el control |
+| `chatgarment_medir.py` | Mide los cuatro grupos por prenda, no por archivo |
+
+`chatgarment_reconstruir.py` es lo que separa el modelo del sintetizador. Sin
+esa columna, un defecto en la salida de ChatGarment no se sabe si lo puso el
+modelo o el programa que dibuja el patrón. Medido sobre las 100 prendas, el
+sintetizador coincide con el original en 99 de 100 veredictos.
+
+`aipparel_entradas.py --demo`, `chatgarment_entradas.py --demo` y
+`chatgarment_medir.py --demo` comprueban su lógica sin tocar el corpus.
 
 `inspect_case.py` y `check_arc_fp.py` existen porque hicieron falta: la
 primera versión del validador rechazaba el 100% de los patrones, y solo
