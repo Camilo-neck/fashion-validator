@@ -17,6 +17,11 @@ Las cinco desviaciones:
    design_params en chatgarment_entradas.py; el modelo recibe el mismo dict que
    recibiria, sin un paso de pago y no determinista en medio.
 5. El dataset arrastra ese dict hasta el bucle.
+6. torch.load con mmap. El checkpoint pesa 15 GB y la maquina tiene 19 GB de
+   RAM: cargado a memoria anonima no cabe junto al modelo. Con mmap los
+   tensores quedan respaldados por el archivo en cache de pagina, y
+   load_state_dict los copia uno a uno sobre parametros que ya estan en bf16
+   dentro de la GPU, asi que la conversion ocurre en la copia.
 """
 import re
 import sys
@@ -59,6 +64,10 @@ def parchear(chatgarment, garmentcode):
         s = cambiar(s, "attn_implementation = 'flash_attention_2'",
                     "attn_implementation = 'sdpa'",
                     "sdpa en vez de flash-attn")
+        s = cambiar(s, 'state_dict = torch.load(resume_path, map_location="cpu")',
+                    'state_dict = torch.load(resume_path, map_location="cpu",\n'
+                    '                            mmap=True, weights_only=True)',
+                    "el checkpoint entra por mmap")
         p.write_text(s)
 
     # --- 4, 5. GPT-4o fuera de la ruta de texto -----------------------------
