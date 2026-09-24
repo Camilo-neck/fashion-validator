@@ -96,6 +96,7 @@ DUROS = frozenset({"borde_degenerado", "esquina_aguda", "curvatura_excesiva",
 # del paper (se interpreta y el grafo de costuras resuelve), que es mucho menos
 # que estar validado.
 ESTRUCTURALES = frozenset({"vertice_inexistente", "contorno_abierto",
+                           "contorno_multiple",
                            "costura_no_binaria", "panel_inexistente",
                            "borde_inexistente", "costura_nula",
                            "borde_multicosido", "panel_suelto"})

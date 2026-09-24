@@ -15,7 +15,7 @@ import math
 import numpy as np
 
 from .geometry import (a_complejo, segmento, longitud, radio_curvatura_min,
-                       angulos_interiores, linealizar, caja,
+                       angulos_interiores, ciclos, linealizar, caja,
                        solapan, cruce_real)
 from .model import Hallazgo, Limites
 
@@ -74,6 +74,17 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
                                 f"el contorno no cierra: los vertices {malos[:6]} no tienen "
                                 f"exactamente dos bordes",
                                 panel=nombre, medido={"vertices_malos": malos[:6]}))
+        else:
+            # grado 2 en todos los vertices no basta: un panel con un agujero,
+            # o dos piezas en una, son dos ciclos y no un contorno
+            anillos = ciclos(panel)
+            if len(anillos) > 1:
+                out.append(Hallazgo(0, "contorno_multiple", "error",
+                                    f"los bordes forman {len(anillos)} ciclos separados, no un "
+                                    f"solo contorno cerrado",
+                                    panel=nombre,
+                                    medido={"ciclos": len(anillos),
+                                            "bordes_por_ciclo": [len(c) for c in anillos]}))
         huerfanos = [i for i in range(n_v) if i not in grado]
         if huerfanos:
             out.append(Hallazgo(0, "vertice_huerfano", "aviso",

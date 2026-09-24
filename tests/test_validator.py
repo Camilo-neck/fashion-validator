@@ -563,3 +563,18 @@ def test_desajuste_expone_el_valor_exacto(sano):
     """desajuste_rel va redondeado para leerlo; el exacto es el que decide."""
     h = next(h for h in validar(_desajustar(sano)) if h.codigo == "desajuste_no_declarado")
     assert h.medido["desajuste_rel"] == round(h.medido["desajuste_rel_exacto"], 4)
+
+
+def test_contorno_con_dos_ciclos():
+    """Grado 2 en todos los vertices, pero dos cuadrados: no es un contorno."""
+    cuadrado = [[0, 0], [10, 0], [10, 10], [0, 10]]
+    vertices = cuadrado + [[x + 20, y] for x, y in cuadrado]
+    edges = ([{"endpoints": [i, (i + 1) % 4]} for i in range(4)]
+             + [{"endpoints": [4 + i, 4 + (i + 1) % 4]} for i in range(4)])
+    spec = {"pattern": {"panels": {"p": {"vertices": vertices, "edges": edges}},
+                        "stitches": []}}
+    from hilvan import ESTRUCTURALES, resumen
+
+    assert "contorno_multiple" in errores(spec)
+    assert "contorno_multiple" in ESTRUCTURALES
+    assert resumen(validar(spec))["valido"] is False
