@@ -711,3 +711,22 @@ def test_recuento_exacto_por_codigo(archivo, esperado):
 
     spec = json.loads((FIXTURE.parent / archivo).read_text(encoding="utf-8"))
     assert dict(Counter(h.codigo for h in validar(spec))) == esperado
+
+
+def test_salida_estable_entre_procesos():
+    """La misma entrada da la misma salida, en el mismo orden, con cualquier semilla
+    de hash: el paper promete un validador determinista."""
+    import os
+    import subprocess
+    import sys
+
+    codigo = ("import json, sys; from hilvan import validar; "
+              "print([[(h.codigo, h.medido.get('contorno_cm')) "
+              "for h in validar(json.load(open(f)))] for f in sys.argv[1:]])")
+    fixtures = [str(FIXTURE.parent / f)
+                for f in ("tshirt.json", "Configured_design_specification.json")]
+    salidas = {subprocess.run([sys.executable, "-c", codigo, *fixtures],
+                              capture_output=True, text=True, check=True,
+                              env={**os.environ, "PYTHONHASHSEED": str(s)}).stdout
+               for s in range(4)}
+    assert len(salidas) == 1

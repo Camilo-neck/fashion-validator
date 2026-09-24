@@ -114,7 +114,9 @@ def _montaje(pattern: dict, lim: Limites):
                   for i in range(len(p["edges"])) if (n, i) not in uso}
     bucles = []
     while pendientes:
-        actual = next(iter(pendientes))
+        # min y no next(iter()): el orden de un set de tuplas con texto cambia
+        # con la semilla de hash de cada proceso, y la salida tiene que ser estable
+        actual = min(pendientes)
         bucle = []
         while actual in pendientes:
             pendientes.discard(actual)
