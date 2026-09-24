@@ -76,8 +76,16 @@ def longitud(panel: dict, idx: int) -> float:
     return float(segmento(panel, panel["edges"][idx]).length())
 
 
-def radio_curvatura_min(seg, muestras: int = 24) -> float:
-    """Radio de curvatura minimo del segmento. Infinito para una recta."""
+def radio_curvatura_min(seg, muestras: int = 201) -> float:
+    """Radio de curvatura minimo del segmento. Infinito para una recta.
+
+    Curvatura analitica de la Bezier, k = |x'y'' - y'x''| / |v|^3, sobre
+    `muestras` valores de t en [0, 1] con los extremos incluidos. La version
+    anterior dividia cuerda entre angulo girado en 24 tramos y sobrestimaba el
+    radio justo donde importa: en el pico de una curva cerrada. Los puntos con
+    velocidad nula (una cuspide) se saltan: ahi no hay curva que coser sino una
+    esquina, y eso lo mira el chequeo de esquinas.
+    """
     if isinstance(seg, Line):
         return math.inf
     if isinstance(seg, Arc):
@@ -85,21 +93,16 @@ def radio_curvatura_min(seg, muestras: int = 24) -> float:
     if seg.length() < 1e-9:
         return math.inf
 
-    peor = math.inf
-    ts = np.linspace(0.02, 0.98, muestras)
-    for t0, t1 in zip(ts[:-1], ts[1:]):
-        try:
-            u0, u1 = seg.unit_tangent(t0), seg.unit_tangent(t1)
-        except Exception:
-            continue
-        # angulo girado entre dos tangentes / arco recorrido = curvatura
-        dot = max(-1.0, min(1.0, u0.real * u1.real + u0.imag * u1.imag))
-        dtheta = math.acos(dot)
-        ds = abs(seg.point(t1) - seg.point(t0))
-        if ds < 1e-9 or dtheta < 1e-9:
-            continue
-        peor = min(peor, ds / dtheta)
-    return peor
+    poli = seg.poly()
+    ts = np.linspace(0.0, 1.0, muestras)
+    v1, v2 = poli.deriv()(ts), poli.deriv(2)(ts)
+    rapidez = np.abs(v1)
+    validos = rapidez > 1e-9
+    if not validos.any():
+        return math.inf
+    kappa = np.abs((np.conj(v1) * v2).imag)[validos] / rapidez[validos] ** 3
+    kmax = float(kappa.max())
+    return 1.0 / kmax if kmax > 0 else math.inf
 
 
 def tangente_saliente(seg, en_inicio: bool) -> complex:
