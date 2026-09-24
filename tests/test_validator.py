@@ -691,3 +691,23 @@ def test_cli_acepta_la_orientacion_deducida(capsys):
 
     main([str(FIXTURE), "--orientacion", "deducida"])
     assert "deduce por topologia para el patron entero" in capsys.readouterr().out
+
+
+# --- regresion sobre los fixtures -------------------------------------------
+
+@pytest.mark.parametrize("archivo, esperado", [
+    ("tshirt.json", {"abertura": 4, "acabado_no_declarado": 1, "bordes_libres": 1,
+                     "costuras_en_redondo": 1, "montaje_supuesto": 1,
+                     "quiebre_en_cruce": 2}),
+    ("Configured_design_specification.json", {
+        "abertura": 2, "acabado_no_declarado": 1, "borde_degenerado": 1,
+        "bordes_libres": 1, "costuras_en_redondo": 1, "desajuste_no_declarado": 2,
+        "esquina_aguda": 1, "esquina_de_diseno": 19, "montaje_supuesto": 1,
+        "pico_de_pinza": 4}),
+])
+def test_recuento_exacto_por_codigo(archivo, esperado):
+    """Un cambio de comportamiento en los fixtures no puede pasar sin verse."""
+    from collections import Counter
+
+    spec = json.loads((FIXTURE.parent / archivo).read_text(encoding="utf-8"))
+    assert dict(Counter(h.codigo for h in validar(spec))) == esperado

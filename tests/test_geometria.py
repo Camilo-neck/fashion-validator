@@ -80,3 +80,33 @@ def test_formato_antiguo_de_cubica():
     antiguo = _borde([[0.3, 0.2], [0.7, -0.2]])
     nuevo = _borde({"type": "cubic", "params": [[0.3, 0.2], [0.7, -0.2]]})
     assert antiguo.point(0.25) == pytest.approx(nuevo.point(0.25))
+
+
+# Arco de (0, 0) a (10, 0) con radio 10, en las cuatro combinaciones de
+# large_arc y sweep. Referencia: pygarment/meshgen/boxmeshgen.py construye
+# Arc(start, r + 1j*r, rotation=0, large_arc=large_arc, sweep=right, end) en el
+# marco del panel. (core._edge_as_curve invierte sweep y el control porque
+# dibuja en el marco SVG, con la y hacia abajo.) Valores analiticos: centros en
+# (5, +-8.66), arco corto de 60 grados y largo de 300.
+ARCOS = {
+    (0, 1): (10.471976, complex(5, -1.339746)),
+    (0, 0): (10.471976, complex(5, 1.339746)),
+    (1, 1): (52.359878, complex(5, -18.660254)),
+    (1, 0): (52.359878, complex(5, 18.660254)),
+}
+
+
+@pytest.mark.parametrize("large_arc, sweep", list(ARCOS))
+def test_arco_como_pygarment(large_arc, sweep):
+    largo, medio = ARCOS[(large_arc, sweep)]
+    seg = _borde({"type": "circle", "params": [10, large_arc, sweep]})
+    assert seg.length() == pytest.approx(largo, abs=1e-4)
+    assert seg.point(0.5).real == pytest.approx(medio.real, abs=1e-4)
+    assert seg.point(0.5).imag == pytest.approx(medio.imag, abs=1e-4)
+
+
+def test_cuadratica_punto_medio_y_largo():
+    """B(0.5) = (P0 + 2 P1 + P2) / 4 con el control en (5, 10)."""
+    seg = _borde({"type": "quadratic", "params": [[0.5, 1.0]]})
+    assert seg.point(0.5) == pytest.approx(complex(5, 5))
+    assert seg.length() == pytest.approx(14.789, abs=1e-3)
