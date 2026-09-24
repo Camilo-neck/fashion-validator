@@ -13,7 +13,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from svgpathtools import CubicBezier
+from svgpathtools import CubicBezier, Line
 
 from .geometry import (a_complejo, segmento, longitud, radio_curvatura_min,
                        angulos_interiores, ciclos, linealizar, caja,
@@ -187,9 +187,12 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
                                                 "punto": [round(p.real, 2), round(p.imag, 2)]}))
 
         # --- cabe en el ancho del rollo
+        # de una recta bastan sus extremos, y cada vertice es el inicio de algun
+        # borde; las curvas se muestrean para que la envolvente las abrace
         pts = np.array([[p.real, p.imag]
                         for s in segs
-                        for p in (s.point(t) for t in np.linspace(0, 1, 12))])
+                        for p in ([s.start] if isinstance(s, Line)
+                                  else (s.point(t) for t in np.linspace(0, 1, 12)))])
         if len(pts):
             # el panel se puede girar cualquier angulo sobre la tela, no solo 90
             # grados: lo que tiene que caber es su ancho minimo

@@ -164,7 +164,9 @@ def _area_con_signo(segs: list, ciclo: list[tuple[int, bool]]) -> float:
     """Area del ciclo muestreando cada segmento en el sentido del recorrido."""
     pts = []
     for i, adelante in ciclo:
-        ts = np.linspace(0.0, 1.0, 9)[:-1] if adelante else np.linspace(1.0, 0.0, 9)[:-1]
+        # de una recta basta su vertice de salida: el area del poligono es exacta
+        n = 1 if isinstance(segs[i], Line) else 8
+        ts = np.linspace(0.0, 1.0, n + 1)[:-1] if adelante else np.linspace(1.0, 0.0, n + 1)[:-1]
         pts += [segs[i].point(t) for t in ts]
     z = np.array(pts)
     return 0.5 * float(np.sum(z.real * np.roll(z.imag, -1) - np.roll(z.real, -1) * z.imag))
