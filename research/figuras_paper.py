@@ -16,16 +16,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, "src")
-from hilvan import validar
+from hilvan import DUROS, validar
 
 # paleta categorica validada con el validador de dataviz (modo claro)
 AZUL, NARANJA, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
 TINTA, TINTA2, REJILLA = "#0b0b0b", "#52514e", "#d8d7d2"
 
-GEO = {"borde_degenerado", "curvatura_excesiva", "esquina_aguda",
-       "auto_interseccion", "excede_ancho_rollo", "contorno_abierto",
-       "vertice_inexistente", "costura_nula", "borde_multicosido",
-       "panel_suelto", "costura_no_binaria"}
 
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["Latin Modern Roman", "DejaVu Serif"],
@@ -63,7 +59,7 @@ def medir(carpeta):
         filas.append({"tipo": tipo(pat),
                       "costuras": max(len(pat.get("stitches", [])), 1),
                       "errores": len(errs),
-                      "geo": sum(1 for h in errs if h.codigo in GEO)})
+                      "duros": sum(1 for h in errs if h.codigo in DUROS)})
     return filas
 
 
@@ -94,13 +90,13 @@ def figura_acumulacion(filas, destino):
     ax.set_yscale("log")
     ax.set_xticks(x, etiquetas)
     ax.set_xlabel("Seams per pattern")
-    ax.set_ylabel("Defect-free patterns (%)")
+    ax.set_ylabel("Fully validated patterns (%)")
     # abajo a la izquierda: la unica zona que ninguna de las dos series ocupa
     ax.legend(frameon=False, loc="lower left")
     # etiqueta directa solo en los extremos, no en cada punto
-    for i, dx, ha in ((0, 7, "left"), (len(x) - 1, -7, "right")):
+    for i, dx, dy, ha in ((0, 7, 3, "left"), (len(x) - 1, 4, -11, "right")):
         ax.annotate(f"{obs[i]:.1f}%", (x[i], obs[i]), textcoords="offset points",
-                    xytext=(dx, 3), ha=ha, fontsize=7.5, color=TINTA)
+                    xytext=(dx, dy), ha=ha, fontsize=7.5, color=TINTA)
     fig.tight_layout(pad=0.3)
     _guardar(fig, destino, "acumulacion")
     plt.close(fig)
@@ -111,9 +107,9 @@ def figura_filtros(filas, destino):
     """Que le hace cada criterio de filtrado a la composicion del corpus."""
     criterios = [
         ("Unfiltered", lambda f: True),
-        ("No hard defect", lambda f: f["geo"] == 0),
+        ("Hard-defect-free", lambda f: f["duros"] == 0),
         ("Rate $\\leq$ 0.10/seam", lambda f: f["errores"] / f["costuras"] <= 0.10),
-        ("Zero errors", lambda f: f["errores"] == 0),
+        ("Fully validated", lambda f: f["errores"] == 0),
     ]
     clases = ["Full-body", "Torso", "Lower-body"]
     colores = {"Full-body": AZUL, "Torso": NARANJA, "Lower-body": AQUA}

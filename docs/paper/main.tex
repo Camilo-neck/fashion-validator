@@ -1,18 +1,19 @@
 % Valid Is Not Manufacturable
-% Compilar con:
+% Build with:
 %   pdflatex main && bibtex main && pdflatex main && pdflatex main
-% (latexmk no sirve en este equipo: MiKTeX no trae Perl.)
+% (latexmk is not used: the MiKTeX install it was written on has no Perl.)
 %
-% Las figuras se regeneran desde el corpus, no se editan a mano:
+% Figures are regenerated from the corpus, never edited by hand:
 %   python research/figuras_paper.py data/garmentcodedata_0 docs/paper/figs
+%   python research/sensibilidad_umbrales.py data/garmentcodedata_0 docs/paper/figs
+% Numbers quoted in the text: research/numeros_paper.py -> figs/numeros_texto.json
 %
-% Clase generica a proposito: compila con una instalacion MiKTeX de serie, sin
-% plantilla de venue. Cambiar a la plantilla del sitio elegido es tocar solo
-% estas lineas de preambulo.
+% Generic class on purpose: it compiles on a stock MiKTeX install with no venue
+% template. Switching to a venue template only touches this preamble.
 
 \documentclass[10pt,twocolumn]{article}
 
-\usepackage{lmodern}   % fuente escalable: microtype la necesita con T1
+\usepackage{lmodern}   % scalable font: microtype needs it with T1
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -48,45 +49,33 @@
 \title{\bfseries Valid Is Not Manufacturable:\\
 Auditing Generative Sewing Patterns at Corpus Scale}
 
-\author{Camilo Cuello \\ \small\texttt{ccuello@unal.edu.co}}
+\author{Camilo Cuello \\
+\small Universidad Nacional de Colombia \todo{department, to confirm with the author} \\
+\small\texttt{ccuello@unal.edu.co}}
 \date{September 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Generative models for garment design are evaluated on whether they emit a
-\emph{well-formed} sewing pattern, not on whether the pattern can be cut and
-sewn. We measure the gap on GarmentCodeData~\citep{gcdata}, the de facto
-pre-training corpus for the field. Across 3{,}450 published patterns --- which
-already passed the authors' own checks and survived physical simulation ---
-20.4\% carry a hard geometric defect, such as edges as short as $0.018$\,cm and
-corners of $0.12^\circ$. A further 69.1\%
-cannot be judged at all, because the seam format records \emph{which} edges are
-joined but not \emph{why} their lengths differ, leaving an intentional gather
-indistinguishable from a defect. We contribute three minimal format extensions
-that make this information expressible, and \textsc{Hilv\'an}, an open-source
-validator covering panel geometry, seam topology and opening girths that
-is deterministic, CPU-only and runs in about 10\,ms per pattern.
-
-Two results bear directly on how such a validator should be used. First, the
-obvious application --- discarding every pattern that reports an error --- is
-counterproductive: it retains 10.5\% of the corpus and halves the share of
-full-body garments, because errors accumulate with seam count while the
-\emph{per-seam} error rate is flat. Filtering on hard geometric defects alone
-retains 79.6\% and leaves the composition intact. Second, a paired comparison
-over 2{,}953 designs rendered on both a neutral and a randomized body finds no
-effect of body shape on defect rate (McNemar $p = 0.91$): the defects belong to
-the parametric design, not to the made-to-measure fit, and are therefore
-reproducible and fixable at source.
-
-Applying the same measurement to a published generative model, 23\% of
-image-conditioned and 17\% of text-conditioned AIpparel patterns are free of
-hard defects, against 78\% of the corpus patterns they were conditioned on, and
-none of the 200 passes full validation. The model emits patterns of the
-same complexity as the corpus --- 31.6 seams per pattern against 31.5 --- while
-88\% of its seams join edges of unequal length: it does not sew less, it sews
-worse.
+Generative models for garment design are judged on whether they emit a
+well-formed sewing pattern, not on whether it can be cut and sewn. We measure
+this gap on GarmentCodeData~\citep{gcdata}, the de facto pre-training corpus of
+the field. Of 3{,}450 published patterns, all of which passed physical
+simulation, 20.4\% carry a hard geometric defect, with edges as short as
+0.018\,cm and corners as sharp as $0.12^\circ$. Another 69.1\% cannot be judged:
+the format records which edges a seam joins but not why their lengths differ,
+so an intended gather looks like a defect. We propose three minimal format
+extensions that make this intent expressible, and \hilvan, an open-source,
+deterministic validator that runs on a CPU in about 10\,ms per pattern.
+Discarding every pattern with an error keeps 10.5\% of the corpus and halves
+its share of full-body garments; discarding only hard defects keeps 79.6\% with
+the composition intact. Body shape has no detectable effect on defect rates
+(paired McNemar $p = 0.91$, 2{,}953 designs), so the defects come from the
+design program. Applied to AIpparel, the same measurement finds 23\% of
+image-conditioned and 17\% of text-conditioned patterns free of hard defects,
+against 78\% of the matching corpus patterns, at the same seam count (31.6
+against 31.5); 88\% of the generated seams join edges of unequal length.
 \end{abstract}
 
 \section{Introduction}
@@ -116,33 +105,26 @@ cases, and so no validator built on it can either.
 
 \paragraph{Contributions.}
 \begin{enumerate}\itemsep1pt
-  \item A corpus-scale measurement of manufacturability on GarmentCodeData:
-  20.4\% of published patterns carry a hard geometric defect and only 10.5\%
-  are fully validated, on patterns that already survived the authors' pipeline including
-  physical simulation (Section~\ref{sec:res-gap}).
-  \item Three minimal format extensions --- for seam ease, edge finishing, and
-  seam orientation --- that make recoverable the intent the current
-  representation discards (Section~\ref{sec:intent}); the third turns out not
-  to be inferable from the file at all.
-  \item \textsc{Hilv\'an}, an open-source validator for panel geometry and seam
-  topology, with every threshold disclosed, including a purely 2D criterion for
-  tangent continuity across seam crossings that needs no 3D assembly
-  (Section~\ref{sec:method}). The name is the Spanish for a basting stitch: the
-  provisional seam sewn to check a garment before it is sewn for real.
-  \item A negative result with a practical remedy: the natural way to use such
-  a validator for corpus sanitization is biased against complex garments, and a
-  defect-class-aware filter avoids it (Section~\ref{sec:res-filter}).
-  \item A null result: made-to-measure fitting to randomized bodies does not
-  degrade pattern geometry (Section~\ref{sec:res-body}), which localizes the
-  defects to the parametric design program.
-  \item The metric applied to a released generative model: 23\% (image) and
-  17\% (text) of AIpparel patterns are hard-defect-free against 78\% of the
-  corpus, none is fully validated, and the failure is localized to seam length
-  agreement rather than to garment complexity or to the conditioning modality
-  (Section~\ref{sec:res-gen}).
-  \item A calibration account, with three independent instances, arguing that
-  suppressing legitimate construction is the harder half of the problem
-  (Section~\ref{sec:calibration}).
+  \item A corpus-scale measurement with explicit definitions. On
+  GarmentCodeData, 20.4\% of published patterns carry a hard geometric defect
+  and 10.5\% are fully validated; the first figure holds under threshold sweeps
+  and vertex merging (Sections~\ref{sec:res-gap} and~\ref{sec:res-robust}).
+  \item Three minimal format extensions, for seam ease, edge finishing and seam
+  orientation, with evidence that orientation cannot be inferred from the file
+  and a corpus-scale measurement of the convention GarmentCode follows
+  (Section~\ref{sec:intent}).
+  \item \hilvan, an open-source validator with every threshold disclosed,
+  including a 2D criterion for tangent continuity across seams and an account
+  of how legitimate construction had to be recognized for the checks to be
+  usable (Sections~\ref{sec:method} and~\ref{sec:calibration}). The name is
+  Spanish for a basting stitch, the provisional seam sewn to check a garment
+  before it is sewn for real.
+  \item Empirical guidance for using such a validator: the zero-error filter is
+  biased against complex garments while a defect-class filter is not
+  (Section~\ref{sec:res-filter}); defect rates do not depend on body shape
+  (Section~\ref{sec:res-body}); and applied to AIpparel, the metric locates the
+  failure in seam length agreement rather than in garment complexity or
+  conditioning modality (Section~\ref{sec:res-gen}).
 \end{enumerate}
 
 \section{Background and Related Work}
@@ -264,8 +246,8 @@ each seam agree in length or declare why they do not.
 A neckline is assembled from edges belonging to different panels and should
 read as one smooth curve on the finished garment. Checking this requires no 3D
 assembly. Where a seam ends, the two panels lie on either side of it and the
-garment's free boundary passes from the neighbouring edge of one panel to the
-neighbouring edge of the other. The angle the boundary turns through is the sum
+garment's free boundary passes from the neighboring edge of one panel to the
+neighboring edge of the other. The angle the boundary turns through is the sum
 of the two panels' interior angles at that corner, so continuity is
 \begin{equation}
   \alpha + \beta \approx 180^\circ,
@@ -370,7 +352,7 @@ We therefore add an \code{orient} declaration (\code{direct} or
 \code{reversed}). It is the only one of our three extensions that cannot be
 checked against geometry --- which is precisely why it must be declared --- but
 it can be checked against topology: a free edge can only continue into another
-free edge, so the orientation matching more free neighbours across the seam is
+free edge, so the orientation matching more free neighbors across the seam is
 the physically consistent one. On the reference t-shirt \code{reversed} matches
 at 12 crossings and \code{direct} at 4, and a declaration contradicted this way
 is reported as a warning. Summed over each pattern's seams, the same count
@@ -384,7 +366,7 @@ The consequence is quantitative, not cosmetic. Under the wrong orientation the
 four openings of a t-shirt are recovered as two loops of $129.6$\,cm, so every
 girth computed from them is meaningless. Where orientation is undeclared, our
 continuity findings are evaluated under both pairings and credited with the
-more favourable one, making them a lower bound; each finding records whether
+more favorable one, making them a lower bound; each finding records whether
 its pairing was declared or inferred.
 
 \section{Calibration Is Half the Problem}
@@ -406,7 +388,7 @@ them.
 \paragraph{Crossings counted at the shared vertex.} Two edges meeting at a
 shared vertex trivially intersect there. Our tolerance was expressed in the
 curve's parameter domain rather than in distance, so the trivial crossing
-survived. Measured in centimetres, the false positive disappears.
+survived. Measured in centimeters, the false positive disappears.
 
 \paragraph{Godet hems read as kinks.} The continuity check of
 Section~\ref{sec:continuity} flagged 19 crossings on a sound godet skirt: a
@@ -460,15 +442,15 @@ conditioning modality rather than the draw of garments, and the corpus patterns
 themselves serve as a ground-truth column measured by the same validator ---
 without which a rate of zero would not distinguish a failing model from an
 unreachable bar. Inference ran on a single 16\,GB GPU at roughly 10\,s per
-sample. The released checkpoint is stored in fp32 while the model instantiates
-in bf16, so loading it with \code{torch.load} materializes 25\,GiB of anonymous
-memory; memory-mapping the file instead keeps the resident set under 1.5\,GiB
-and makes the run fit.
+sample (Appendix~\ref{app:impl}).
 
-\paragraph{Reproducibility.} All measurements run on CPU with fixed thresholds;
-the validator, its 41-case test suite, the sweep tool and the scripts that
-generate the figures in this paper from the corpus are released together, as
-are the four scripts behind the generator experiment.
+\paragraph{Reproducibility.} All corpus measurements run on CPU with the fixed
+thresholds of Table~\ref{tab:thresholds}. Validation takes about 10\,ms per
+pattern on one core, so the full 115{,}000-garment corpus takes roughly twenty
+core-minutes (Appendix~\ref{app:impl}). The validator, its 41-case test suite,
+the sweep tool and the scripts that produce every number and figure in this
+paper from the corpus are released together, as are the four scripts behind
+the generator experiment.
 
 \paragraph{A note on the dataset's license.} GarmentCodeData states no license
 in its distribution, its documentation, or its project page, and its repository
@@ -481,13 +463,14 @@ citation~\citep{gcdata}, which we give.
 \subsection{Hard defects in published patterns}
 \label{sec:res-gap}
 
-Table~\ref{tab:breakdown} reports the outcome over the neutral-body corpus.
+Table~\ref{tab:breakdown} reports the outcome over the neutral-body corpus, and
+Table~\ref{tab:defects} breaks the hard defects down by class.
 Only 10.5\% of the patterns are fully validated, but the remaining 89.5\%
 mix two different things: an edge of $0.018$\,cm cannot be cut, whereas an
 undeclared seam mismatch may be a legitimate gather nobody wrote down.
 Separated, one in five published patterns carries a hard geometric defect.
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \begin{tabular}{lrr}
 \toprule
@@ -501,12 +484,13 @@ Fully validated & 362 & 10.5 \\
 Total & 3{,}450 & 100.0 \\
 \bottomrule
 \end{tabular}
-\caption{Outcome over 3{,}450 published patterns. The two failure classes are
-not comparable and should not be summed into a single headline.}
+\caption{Outcome over the 3{,}450 neutral-body patterns. Rows are exclusive: a
+pattern with any hard defect is counted in the first row regardless of its
+other findings.}
 \label{tab:breakdown}
 \end{table}
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \begin{tabular}{lrr}
 \toprule
@@ -525,7 +509,8 @@ hard defect. The shortest edge in the batch measures $0.018$\,cm.}
 \label{tab:defects}
 \end{table}
 
-\subsection{Findings are not threshold artefacts}
+\subsection{Findings are not threshold artifacts}
+\label{sec:res-robust}
 
 If the reported values clustered just below their limits, the result would be a
 property of our thresholds rather than of the garments. Table~\ref{tab:margins}
@@ -588,7 +573,7 @@ filled by the author or a patternmaker.}
 % research/muestra_auditoria.py data/garmentcodedata_0 docs/auditoria
 
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
@@ -628,11 +613,9 @@ opportunities to fail usually takes one.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{acumulacion.pdf}
-\caption{Fully validated rate by seam count (log scale), against the rate expected
-if defects were independent across seams. The observed curve lies orders of
-magnitude above the prediction --- at 20--30 seams, 8.5\% against 0.4\% --- so
-defects cluster within patterns: a genuine per-pattern quality signal exists.
-But the decline with size is an accumulation artefact, not a quality gradient.}
+\caption{Fully validated rate by seam count (log scale): observed, and
+predicted by a null model in which each seam fails independently at its bin's
+per-seam error rate.}
 \label{fig:accum}
 \end{figure}
 
@@ -664,9 +647,8 @@ the corpus.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{filtros.pdf}
-\caption{Garment-type composition of the corpus retained by each filtering
-criterion. Filtering on all errors (bottom row) biases the corpus toward simple
-garments; filtering on hard geometric defects does not.}
+\caption{Garment-type composition of the neutral-body corpus retained by four
+filtering criteria; $n$ is the number of patterns retained.}
 \label{fig:filters}
 \end{figure}
 
@@ -782,18 +764,6 @@ that showed no difference. More importantly, AIpparel was trained on
 GarmentCodeData and these garments are drawn from it, so if they appeared in its
 training set, these rates are the benign case rather than the adversarial one.
 
-\subsection{Runtime}
-
-Validation costs about $10$\,ms per pattern on one CPU core (11.0\,ms and
-8.3\,ms on our two reference garments), so the full 115{,}000-garment corpus is
-roughly twenty core-minutes. This matters for the intended uses: a filter that
-costs as much as what it filters is not a filter. Reaching that figure required
-one optimization --- self-intersection testing was 96\% of runtime, from
-re-linearizing the second edge inside the first edge's loop and from comparing
-all edge pairs irrespective of proximity. Linearizing once per edge and
-rejecting pairs by bounding box is exact, not approximate: boxes are dilated by
-the vertex tolerance before comparison, so the filter can only do redundant
-work, never miss a crossing.
 
 \section{Discussion}
 
@@ -900,14 +870,30 @@ property of the design program rather than of made-to-measure fitting, which
 means they are reproducible, attributable, and fixable where they are
 introduced.
 
-\paragraph{Availability.} \textsc{Hilv\'an}, its tests, sweep tool and figure scripts are
-available at
-\url{https://github.com/Camilo-neck/hilvan}, released under
-the MIT license. The corpus itself is not redistributed: GarmentCodeData
-declares no license, so this work reports statistics over it and cites it,
-but publishes no subset of the patterns.
+\paragraph{Availability.} \hilvan, its tests, sweep tool and figure scripts are
+available under the MIT license at
+\url{https://github.com/Camilo-neck/fashion-validator}.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
+
+\appendix
+\section{Implementation Notes}
+\label{app:impl}
+
+\paragraph{Self-intersection.} Validation takes 11.0\,ms and 8.3\,ms on our two
+reference garments. Reaching that required one optimization:
+self-intersection testing was 96\% of runtime, because the second edge was
+re-linearized inside the first edge's loop and all edge pairs were compared
+irrespective of proximity. We now linearize each edge once and reject pairs by
+bounding box. The boxes are dilated by the vertex tolerance before comparison,
+so the rejection can only do redundant work and never misses a crossing.
+
+\paragraph{Running AIpparel on 16\,GB.} The released checkpoint is stored in
+fp32 while the model instantiates in bf16, so loading it with
+\code{torch.load} materializes 25\,GiB of anonymous memory. Memory-mapping the
+file keeps the resident set under 1.5\,GiB and lets inference run on a single
+16\,GB GPU.
+
 
 \end{document}

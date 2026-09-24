@@ -33,7 +33,7 @@
    "Torso": 26.782608695652176,
    "Lower-body": 12.956521739130435
   },
-  "No hard defect": {
+  "Hard-defect-free": {
    "n": 2745,
    "Full-body": 58.21493624772313,
    "Torso": 26.15664845173042,
@@ -45,7 +45,7 @@
    "Torso": 33.295838020247466,
    "Lower-body": 18.560179977502813
   },
-  "Zero errors": {
+  "Fully validated": {
    "n": 362,
    "Full-body": 31.49171270718232,
    "Torso": 45.58011049723757,
