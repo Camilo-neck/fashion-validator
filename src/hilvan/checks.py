@@ -26,8 +26,12 @@ def _es_pico_de_pinza(edges: list[dict], panel: dict, i0: int, i1: int,
                       lim: Limites) -> bool:
     """Un pico de pinza: dos bordes rectos de longitud practicamente igual.
 
-    Es la firma geometrica de una pinza, que es agudo a proposito. Sin esta
-    excepcion el validador marca como defecto toda falda y todo pantalon.
+    Es la firma geometrica de una pinza, que es aguda a proposito. Solo se
+    consulta en esquinas concavas: con el angulo interior con signo una pinza
+    ya no puede confundirse con una punta, asi que la excepcion no evita
+    errores sino avisos. Se mantiene porque las pinzas son construccion
+    corriente en faldas y pantalones, y como `muesca_aguda` ahogarian el aviso
+    que si importa, el de la ranura asimetrica.
     """
     if edges[i0].get("curvature") or edges[i1].get("curvature"):
         return False
@@ -119,7 +123,10 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
                 continue
             medido = {"vertice": vi, "angulo_grados": round(ang, 2),
                       "angulo_interior_grados": round(interior, 2)}
-            if lim.permitir_pinzas and _es_pico_de_pinza(edges, panel, i0, i1, lim):
+            # Una pinza apunta hacia dentro del panel: su pico es concavo. Una
+            # punta convexa de piernas iguales es una lengueta, no una pinza.
+            if (not convexa and lim.permitir_pinzas
+                    and _es_pico_de_pinza(edges, panel, i0, i1, lim)):
                 out.append(Hallazgo(0, "pico_de_pinza", "info",
                                     f"el vertice {vi} forma {ang:.1f} grados entre dos bordes "
                                     f"rectos de igual longitud: se interpreta como pinza",

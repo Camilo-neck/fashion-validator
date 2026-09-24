@@ -510,3 +510,10 @@ def test_pinzas_del_fixture_son_concavas():
     pinzas = [h for h in validar(spec) if h.codigo == "pico_de_pinza"]
     assert len(pinzas) == 4
     assert all(h.medido["angulo_interior_grados"] > 340 for h in pinzas)
+
+
+def test_punta_isosceles_no_es_pinza():
+    """Piernas rectas e iguales no bastan: una pinza apunta hacia dentro."""
+    codigos = {h.codigo for h in validar(_panel_solo([[0, 0], [40, -2.8], [40, 2.8]]))}
+    assert "esquina_aguda" in codigos
+    assert "pico_de_pinza" not in codigos
