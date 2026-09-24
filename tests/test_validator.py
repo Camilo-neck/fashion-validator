@@ -456,3 +456,57 @@ def test_duros_son_codigos_que_el_validador_emite():
 
     assert emitidos, "no se encontro ningun Hallazgo construido"
     assert DUROS <= emitidos, f"codigos inexistentes en DUROS: {sorted(DUROS - emitidos)}"
+
+
+# --- esquinas convexas y concavas -------------------------------------------
+
+def _panel_solo(vertices, **extra):
+    n = len(vertices)
+    panel = {"vertices": vertices,
+             "edges": [{"endpoints": [i, (i + 1) % n]} for i in range(n)], **extra}
+    return {"pattern": {"panels": {"p": panel}, "stitches": []}}
+
+
+# un cuadrado de 40 cm con una muesca asimetrica hacia dentro desde el borde
+# inferior: en (20, 12) la tela da la vuelta a 354 grados, no a 6
+MUESCA = [[0, 0], [20, 0], [20, 12], [21, 3], [21, 0], [40, 0], [40, 40], [0, 40]]
+
+
+def test_muesca_concava_no_es_esquina_aguda():
+    """Sin signo, la muesca mide 6.3 grados, igual que una punta: no es lo mismo."""
+    hallazgos = {h.codigo: h for h in validar(_panel_solo(MUESCA))}
+    assert "esquina_aguda" not in hallazgos
+    muesca = hallazgos["muesca_aguda"]
+    assert muesca.severidad == "aviso"
+    assert muesca.medido["angulo_grados"] == pytest.approx(6.34, abs=0.05)
+    assert muesca.medido["angulo_interior_grados"] == pytest.approx(353.66, abs=0.05)
+
+
+def test_muesca_es_igual_en_los_dos_sentidos_de_recorrido():
+    """La orientacion del contorno sale del area, no del orden de los vertices."""
+    horario = list(reversed(MUESCA))
+    codigos = {h.codigo for h in validar(_panel_solo(horario))}
+    assert "muesca_aguda" in codigos and "esquina_aguda" not in codigos
+
+
+def test_punta_convexa_es_esquina_aguda():
+    """Una lengueta de 8 grados con lados distintos: defecto duro, no pinza."""
+    hallazgos = [h for h in validar(_panel_solo([[0, 0], [30, 0], [40, 5.62]]))
+                 if h.codigo == "esquina_aguda"]
+    assert len(hallazgos) == 1
+    assert hallazgos[0].severidad == "error"
+    assert hallazgos[0].medido["angulo_interior_grados"] == pytest.approx(8.0, abs=0.1)
+
+
+def test_pinzas_del_fixture_son_concavas():
+    """Las cuatro pinzas de cintura de la falda con godets apuntan hacia dentro.
+
+    Sus dos piernas se cosen entre si en el propio archivo (bordes 3-4, 6-7,
+    9-10 y 12-13 de `skirt_back`), asi que son pinzas y se quedan como tales.
+    Las ranuras de los godets, abajo, forman unos 25 grados y no se reportan.
+    """
+    spec = json.loads((FIXTURE.parent / "Configured_design_specification.json")
+                      .read_text(encoding="utf-8"))
+    pinzas = [h for h in validar(spec) if h.codigo == "pico_de_pinza"]
+    assert len(pinzas) == 4
+    assert all(h.medido["angulo_interior_grados"] > 340 for h in pinzas)

@@ -15,7 +15,7 @@ import math
 import numpy as np
 
 from .geometry import (a_complejo, segmento, longitud, radio_curvatura_min,
-                       tangente_saliente, angulo_entre, linealizar, caja,
+                       angulos_interiores, linealizar, caja,
                        solapan, cruce_real)
 from .model import Hallazgo, Limites
 
@@ -100,26 +100,42 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
             incidencias.setdefault(a, []).append((i, True))
             incidencias.setdefault(b, []).append((i, False))
 
+        # El angulo entre las dos tangentes no basta: una punta convexa de 6
+        # grados y una muesca concava de 354 dan el mismo valor sin signo, y en
+        # patronaje son opuestas. La punta es una lengueta de tela que no se
+        # puede coser limpia: defecto duro. La muesca es una ranura hacia
+        # dentro del panel, construccion normal (el fondo de una pinza, una
+        # abertura): se avisa, porque puede ser un tajo accidental, pero no
+        # impide fabricar y queda fuera de DUROS.
+        interiores = angulos_interiores(panel, segs)
         for vi, inc in incidencias.items():
-            if len(inc) != 2:
+            if len(inc) != 2 or vi not in interiores:
                 continue
-            (i0, ini0), (i1, ini1) = inc
-            ang = angulo_entre(tangente_saliente(segs[i0], ini0),
-                               tangente_saliente(segs[i1], ini1))
+            (i0, _), (i1, _) = inc
+            interior = interiores[vi]
+            convexa = interior < 180.0
+            ang = interior if convexa else 360.0 - interior
             if ang >= lim.angulo_min_esquina:
                 continue
+            medido = {"vertice": vi, "angulo_grados": round(ang, 2),
+                      "angulo_interior_grados": round(interior, 2)}
             if lim.permitir_pinzas and _es_pico_de_pinza(edges, panel, i0, i1, lim):
                 out.append(Hallazgo(0, "pico_de_pinza", "info",
                                     f"el vertice {vi} forma {ang:.1f} grados entre dos bordes "
                                     f"rectos de igual longitud: se interpreta como pinza",
-                                    panel=nombre, borde=i0,
-                                    medido={"vertice": vi, "angulo_grados": round(ang, 2)}))
+                                    panel=nombre, borde=i0, medido=medido))
                 continue
-            out.append(Hallazgo(0, "esquina_aguda", "error",
-                                f"el vertice {vi} forma {ang:.1f} grados, por debajo de "
-                                f"{lim.angulo_min_esquina}",
-                                panel=nombre, borde=i0,
-                                medido={"vertice": vi, "angulo_grados": round(ang, 2)}))
+            if convexa:
+                out.append(Hallazgo(0, "esquina_aguda", "error",
+                                    f"el vertice {vi} es una punta de {ang:.1f} grados, por "
+                                    f"debajo de {lim.angulo_min_esquina}",
+                                    panel=nombre, borde=i0, medido=medido))
+            else:
+                out.append(Hallazgo(0, "muesca_aguda", "aviso",
+                                    f"el vertice {vi} es una muesca hacia dentro de "
+                                    f"{ang:.1f} grados de abertura: construccion normal si "
+                                    f"es una ranura o una pinza, un tajo si no",
+                                    panel=nombre, borde=i0, medido=medido))
 
         # --- auto-interseccion entre bordes
         #
@@ -165,19 +181,19 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
 PARES = {"direct": ((0, 0), (1, 1)), "reversed": ((0, 1), (1, 0))}
 
 
-def _esquina(panel: dict, segs: list, v: int, idx: int):
-    """El otro borde que llega al vertice `v`, y el angulo que forma con `idx`.
+def _esquina(panel: dict, interiores: dict, v: int, idx: int):
+    """El otro borde que llega al vertice `v`, y el angulo interior del panel ahi.
 
-    Devuelve None si el vertice no tiene exactamente dos bordes: ese caso ya lo
-    reporta el nivel 0 como contorno abierto.
+    El angulo es el interior con signo, no el que forman las dos tangentes: la
+    suma alfa + beta de la continuidad solo vale 180 si cada termino dice de que
+    lado queda la tela. Devuelve None si el vertice no tiene exactamente dos
+    bordes: ese caso ya lo reporta el nivel 0 como contorno abierto.
     """
     inc = [i for i, e in enumerate(panel["edges"]) if v in e["endpoints"]]
-    if len(inc) != 2 or idx not in inc:
+    if len(inc) != 2 or idx not in inc or v not in interiores:
         return None
     vecino = inc[0] if inc[1] == idx else inc[1]
-    u0 = tangente_saliente(segs[idx], panel["edges"][idx]["endpoints"][0] == v)
-    u1 = tangente_saliente(segs[vecino], panel["edges"][vecino]["endpoints"][0] == v)
-    return angulo_entre(u0, u1), vecino
+    return interiores[v], vecino
 
 
 def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
@@ -198,12 +214,12 @@ def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
     """
     out: list[Hallazgo] = []
     panels = pattern["panels"]
-    cache: dict[str, list] = {}
+    cache: dict[str, dict] = {}
 
-    def segmentos(nombre: str) -> list:
+    def interiores(nombre: str) -> dict:
         if nombre not in cache:
             p = panels[nombre]
-            cache[nombre] = [segmento(p, e) for e in p["edges"]]
+            cache[nombre] = angulos_interiores(p, [segmento(p, e) for e in p["edges"]])
         return cache[nombre]
 
     for si, st in enumerate(pattern.get("stitches", [])):
@@ -224,7 +240,7 @@ def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
             datos = [(l["panel"], panels[l["panel"]], l["edge"],
                       panels[l["panel"]]["edges"][l["edge"]]["endpoints"])
                      for l in lados]
-            esquinas = [[_esquina(p, segmentos(n), v, i) for v in eps]
+            esquinas = [[_esquina(p, interiores(n), v, i) for v in eps]
                         for n, p, i, eps in datos]
         except (KeyError, IndexError, TypeError):
             continue  # referencia rota: ya lo reporta el resto del nivel 1

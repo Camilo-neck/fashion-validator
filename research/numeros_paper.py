@@ -19,7 +19,7 @@ import numpy as np
 sys.path.insert(0, "src")
 from hilvan import DUROS, Limites, validar
 from hilvan.checks import PARES, _esquina
-from hilvan.geometry import segmento
+from hilvan.geometry import angulos_interiores, segmento
 
 LIM = Limites()
 DESAJUSTE = ("desajuste_no_declarado", "fruncido_no_declarado")
@@ -35,7 +35,8 @@ def cruces_libres(pattern):
     panels = pattern["panels"]
     uso = {(s["panel"], s["edge"]) for st in pattern.get("stitches", [])
            for s in st if isinstance(s, dict)}
-    segs = {n: [segmento(p, e) for e in p["edges"]] for n, p in panels.items()}
+    interiores = {n: angulos_interiores(p, [segmento(p, e) for e in p["edges"]])
+                  for n, p in panels.items()}
     total = {"direct": 0, "reversed": 0}
     for st in pattern.get("stitches", []):
         lados = [s for s in st if isinstance(s, dict)]
@@ -44,7 +45,7 @@ def cruces_libres(pattern):
         try:
             datos = [(l["panel"], l["edge"],
                       panels[l["panel"]]["edges"][l["edge"]]["endpoints"]) for l in lados]
-            esq = [[_esquina(panels[n], segs[n], v, i) for v in eps] for n, i, eps in datos]
+            esq = [[_esquina(panels[n], interiores[n], v, i) for v in eps] for n, i, eps in datos]
         except (KeyError, IndexError, TypeError):
             continue
         if any(e is None for par in esq for e in par):

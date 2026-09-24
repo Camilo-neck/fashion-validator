@@ -17,6 +17,7 @@ from .model import Limites
 
 __all__ = ["a_complejo", "rel_a_abs_2d", "segmento", "longitud",
            "radio_curvatura_min", "tangente_saliente", "angulo_entre",
+           "ciclos", "angulos_interiores", "angulo_interior",
            "linealizar", "caja", "solapan", "cruce_real"]
 
 
@@ -115,6 +116,79 @@ def angulo_entre(u0: complex, u1: complex) -> float:
     """Angulo en grados entre dos tangentes unitarias."""
     dot = max(-1.0, min(1.0, u0.real * u1.real + u0.imag * u1.imag))
     return math.degrees(math.acos(dot))
+
+
+def ciclos(panel: dict) -> list[list[tuple[int, bool]]]:
+    """Los ciclos del contorno, como listas de (borde, recorrido_hacia_adelante).
+
+    Supone que cada vertice tiene exactamente dos bordes; si no, el contorno
+    esta abierto y devuelve []. Un contorno sano es un solo ciclo con todos
+    los bordes; mas de uno es un panel con agujeros o dos piezas en una.
+    """
+    por_vertice: dict[int, list[int]] = {}
+    for i, e in enumerate(panel["edges"]):
+        for v in e["endpoints"]:
+            por_vertice.setdefault(v, []).append(i)
+    if any(len(inc) != 2 for inc in por_vertice.values()):
+        return []
+
+    pendientes = set(range(len(panel["edges"])))
+    out = []
+    while pendientes:
+        inicio = min(pendientes)
+        ciclo, borde, adelante = [], inicio, True
+        while borde in pendientes:
+            pendientes.discard(borde)
+            ciclo.append((borde, adelante))
+            a, b = panel["edges"][borde]["endpoints"]
+            llegada = b if adelante else a
+            inc = por_vertice[llegada]
+            borde = inc[1] if inc[0] == borde else inc[0]
+            adelante = panel["edges"][borde]["endpoints"][0] == llegada
+        out.append(ciclo)
+    return out
+
+
+def _area_con_signo(segs: list, ciclo: list[tuple[int, bool]]) -> float:
+    """Area del ciclo muestreando cada segmento en el sentido del recorrido."""
+    pts = []
+    for i, adelante in ciclo:
+        ts = np.linspace(0.0, 1.0, 9)[:-1] if adelante else np.linspace(1.0, 0.0, 9)[:-1]
+        pts += [segs[i].point(t) for t in ts]
+    z = np.array(pts)
+    return 0.5 * float(np.sum(z.real * np.roll(z.imag, -1) - np.roll(z.real, -1) * z.imag))
+
+
+def angulos_interiores(panel: dict, segs: list) -> dict[int, float]:
+    """Angulo interior de cada vertice, en grados en [0, 360).
+
+    Menor de 180 es una esquina convexa (una punta); mayor, una concava (una
+    muesca o el fondo de una pinza). El interior se decide con la orientacion
+    del ciclo: el signo de su area. Cada ciclo se orienta por separado, asi
+    que en un panel con varios ciclos los angulos son los de la region que
+    encierra cada uno. Vacio si el contorno no cierra.
+    """
+    out: dict[int, float] = {}
+    for ciclo in ciclos(panel):
+        antihorario = _area_con_signo(segs, ciclo) >= 0
+        for k, (i_ent, adelante_ent) in enumerate(ciclo):
+            i_sal, adelante_sal = ciclo[(k + 1) % len(ciclo)]
+            e_ent = panel["edges"][i_ent]["endpoints"]
+            v = e_ent[1] if adelante_ent else e_ent[0]
+            # tangentes que salen del vertice por cada uno de sus dos bordes
+            t_ent = tangente_saliente(segs[i_ent], en_inicio=not adelante_ent)
+            t_sal = tangente_saliente(segs[i_sal], en_inicio=adelante_sal)
+            giro = math.degrees(math.atan2(t_ent.imag, t_ent.real)
+                                - math.atan2(t_sal.imag, t_sal.real))
+            # recorriendo en sentido antihorario el interior queda a la
+            # izquierda: se barre de la salida a la llegada en ese sentido
+            out[v] = (giro if antihorario else -giro) % 360.0
+    return out
+
+
+def angulo_interior(panel: dict, segs: list, v: int) -> float | None:
+    """Angulo interior con signo del vertice `v`, o None si el contorno no cierra."""
+    return angulos_interiores(panel, segs).get(v)
 
 
 def linealizar(seg, n: int) -> list[Line]:
