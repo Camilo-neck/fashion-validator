@@ -533,8 +533,60 @@ shows that for two of the three classes they do not. The median short edge is
 0.15\,cm, under a third of the limit, and the median undeclared mismatch is
 5.6\%, over five times the tolerance. Sharp corners sit closer: their median is
 $11.2^\circ$ against a limit of $15^\circ$, and their 90th percentile is
-$14.7^\circ$, so around a tenth of them would disappear if the limit were
-lowered by one degree.
+$14.7^\circ$.
+
+Figure~\ref{fig:sens} sweeps each threshold with the others at their defaults.
+The share of patterns with a hard defect moves smoothly with both geometric
+limits: from 15.1\% to 32.4\% as the minimum edge length goes from 0.25 to
+1\,cm, and from 17.0\% to 25.2\% as the minimum corner angle goes from
+$10^\circ$ to $20^\circ$. No value in either sweep brings it below 14\%. The
+seam tolerance behaves differently. The fully validated rate climbs in steps,
+from 10.5\% at a 1\% tolerance to 28.3\% at 5\% and 65.0\% at 10\%, because
+undeclared mismatches cluster at a few values: 4{,}638 of the 17{,}496 fall
+between 4.75\% and 5.0\% or between 6.75\% and 7.0\%. The hard-defect share is
+therefore stable under reasonable thresholds, while the split between full
+validation and undeclared intent in Table~\ref{tab:breakdown} depends on the
+tolerance.
+% research/sensibilidad_umbrales.py -> figs/sensibilidad.{pdf,json}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{sensibilidad.pdf}
+\caption{Share of neutral-body patterns flagged as each threshold is swept
+with the others at their defaults (dotted line). Left and center: patterns
+with the corresponding defect class and with any hard defect. Right: patterns
+with an undeclared mismatch in the error zone, and patterns that are fully
+validated.}
+\label{fig:sens}
+\end{figure*}
+
+A short edge in a net pattern could also be a near-duplicate vertex that CAD
+software would merge on import. To test this we collapse every edge shorter
+than $\varepsilon$ into a single vertex at its midpoint and validate again.
+Merging at $\varepsilon = 0.05$\,cm and $0.1$\,cm leaves 20.1\% and 19.2\% of
+patterns with a hard defect; at $0.25$\,cm the share is 15.2\%. Merging up to
+the threshold itself ($0.5$\,cm) removes the short-edge class by construction
+and leaves 7.6\%, almost all sharp corners, but it also deletes 801 seams in
+379 patterns, because many of the collapsed edges were sewn to another panel.
+Most short edges are therefore not duplicate vertices. A fabrication pipeline
+could clean part of them, but only by editing the seam graph as well.
+% research/fusion_vertices.py -> figs/fusion.json
+
+\subsection{Precision audit}
+\label{sec:res-audit}
+
+The margins and sweeps above bound how much the counts depend on threshold
+values. They do not show that a reported finding is a real defect. For that we
+drew a stratified random sample of 100 findings from the neutral-body corpus
+with a fixed seed: 30 short edges, 30 sharp corners, 30 undeclared mismatches,
+5 self-intersections and 5 panels wider than the roll. Each is rendered with
+the offending element highlighted and judged by hand as a defect or a false
+positive.
+\todo{Precision per class after the manual audit of docs/auditoria/auditoria.csv
+(research/muestra\_auditoria.py). The verdict column is empty and must be
+filled by the author or a patternmaker.}
+% research/muestra_auditoria.py data/garmentcodedata_0 docs/auditoria
+
 
 \begin{table}[h]
 \centering
@@ -777,8 +829,11 @@ field, not for want of a validator.
 plausible but have not been contrasted against real fabric by a professional
 patternmaker. They are an explicit hypothesis. The relative claim --- that
 published patterns contain defects nobody checks for --- does not depend on the
-exact values, and Table~\ref{tab:margins} shows the margins are wide, but the
-absolute counts should be read as threshold-conditional.
+exact values: Figure~\ref{fig:sens} shows the hard-defect share stays between
+14\% and 33\% across the swept ranges. The absolute counts should still be read
+as threshold-conditional, the split between full validation and undeclared
+intent depends strongly on the seam tolerance, and the precision of each
+finding class awaits the manual audit of Section~\ref{sec:res-audit}.
 
 \paragraph{One batch of twenty-four.} We measured both body variants of a
 single batch. Batch-to-batch variation is unmeasured, though the two body

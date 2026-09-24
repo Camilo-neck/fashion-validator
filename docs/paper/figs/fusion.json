@@ -1,0 +1,56 @@
+{
+ "patrones": 3450,
+ "eps_0": {
+  "pct_duro": 20.43,
+  "por_clase": {
+   "borde_degenerado": 501,
+   "esquina_aguda": 234,
+   "excede_ancho_rollo": 4,
+   "auto_interseccion": 3
+  }
+ },
+ "eps_0.05": {
+  "pct_duro": 20.14,
+  "por_clase": {
+   "borde_degenerado": 491,
+   "esquina_aguda": 240,
+   "excede_ancho_rollo": 4,
+   "auto_interseccion": 3
+  },
+  "costuras_perdidas": 61,
+  "patrones_con_costura_perdida": 40
+ },
+ "eps_0.1": {
+  "pct_duro": 19.16,
+  "por_clase": {
+   "borde_degenerado": 450,
+   "esquina_aguda": 240,
+   "excede_ancho_rollo": 4,
+   "auto_interseccion": 3
+  },
+  "costuras_perdidas": 429,
+  "patrones_con_costura_perdida": 248
+ },
+ "eps_0.25": {
+  "pct_duro": 15.16,
+  "por_clase": {
+   "borde_degenerado": 294,
+   "esquina_aguda": 250,
+   "excede_ancho_rollo": 4,
+   "auto_interseccion": 3
+  },
+  "costuras_perdidas": 437,
+  "patrones_con_costura_perdida": 252
+ },
+ "eps_0.5": {
+  "pct_duro": 7.57,
+  "por_clase": {
+   "esquina_aguda": 256,
+   "excede_ancho_rollo": 4,
+   "auto_interseccion": 3,
+   "borde_degenerado": 1
+  },
+  "costuras_perdidas": 801,
+  "patrones_con_costura_perdida": 379
+ }
+}

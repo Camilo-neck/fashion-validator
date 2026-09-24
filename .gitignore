@@ -19,6 +19,7 @@ runs/
 *.pdf
 !docs/**/*.png
 !docs/**/*.svg
+!docs/paper/figs/*.pdf
 
 # Configuracion local de GarmentCode
 system.json
