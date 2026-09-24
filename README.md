@@ -181,8 +181,15 @@ Requisitos: Python 3.10 o superior.
 pip install -e .
 ```
 
-Las únicas dependencias son `numpy` y `svgpathtools`. **No requiere
+Las únicas dependencias son `numpy` (1.x o 2.x) y `svgpathtools`. **No requiere
 GarmentCode**: lee su formato JSON, pero no depende del paquete.
+
+Para correr los scripts de [`research/`](research/) que miden el corpus y
+regeneran las figuras del paper:
+
+```bash
+pip install -e ".[research]"
+```
 
 ## Uso
 

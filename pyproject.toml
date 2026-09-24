@@ -11,12 +11,15 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
-    "numpy<2",
+    "numpy",
     "svgpathtools>=1.6",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
+# los scripts de research/ que miden el corpus y dibujan las figuras del paper;
+# los que generan patrones necesitan ademas un clon de GarmentCode
+research = ["matplotlib", "pyyaml"]
 
 [project.scripts]
 hilvan = "hilvan.cli:main"
