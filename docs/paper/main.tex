@@ -24,8 +24,14 @@
 \usepackage[numbers]{natbib}
 \usepackage[hidelinks]{hyperref}
 \usepackage[margin=2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{tabularx}
 
 \graphicspath{{figs/}}
+
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\hilvan}{\textsc{Hilv\'an}}
 
 \lstset{
   basicstyle=\ttfamily\footnotesize,
@@ -54,13 +60,13 @@ Generative models for garment design are evaluated on whether they emit a
 sewn. We measure the gap on GarmentCodeData~\citep{gcdata}, the de facto
 pre-training corpus for the field. Across 3{,}450 published patterns --- which
 already passed the authors' own checks and survived physical simulation ---
-20.4\% contain a defect that makes the garment unmanufacturable, including
-edges as short as $0.018$\,cm and corners of $0.16^\circ$. A further 69.1\%
+20.4\% carry a hard geometric defect, such as edges as short as $0.018$\,cm and
+corners of $0.12^\circ$. A further 69.1\%
 cannot be judged at all, because the seam format records \emph{which} edges are
 joined but not \emph{why} their lengths differ, leaving an intentional gather
 indistinguishable from a defect. We contribute three minimal format extensions
 that make this information expressible, and \textsc{Hilv\'an}, an open-source
-validator covering panel geometry, seam topology and geometric wearability that
+validator covering panel geometry, seam topology and opening girths that
 is deterministic, CPU-only and runs in about 10\,ms per pattern.
 
 Two results bear directly on how such a validator should be used. First, the
@@ -74,8 +80,10 @@ effect of body shape on defect rate (McNemar $p = 0.91$): the defects belong to
 the parametric design, not to the made-to-measure fit, and are therefore
 reproducible and fixable at source.
 
-Applying the same measurement to a published generative model, none of 200
-patterns produced by AIpparel is manufacturable. The model emits patterns of the
+Applying the same measurement to a published generative model, 23\% of
+image-conditioned and 17\% of text-conditioned AIpparel patterns are free of
+hard defects, against 78\% of the corpus patterns they were conditioned on, and
+none of the 200 passes full validation. The model emits patterns of the
 same complexity as the corpus --- 31.6 seams per pattern against 31.5 --- while
 88\% of its seams join edges of unequal length: it does not sew less, it sews
 worse.
@@ -94,9 +102,13 @@ These systems are evaluated, implicitly or explicitly, on whether their output
 without raising. We call this property \emph{validity}. The property industry
 needs is different --- whether the pattern can be cut from fabric and sewn by a
 machine --- and we call it \emph{manufacturability}. Validity does not imply it.
+Section~\ref{sec:method} turns this into two measurable levels: a pattern is
+\emph{hard-defect-free} when no panel has a geometric defect that no reading of
+the file can excuse, and \emph{fully validated} when, in addition, every seam
+length mismatch is declared.
 
 The gap is not a technicality. An edge measuring $0.018$\,cm cannot be cut. A
-corner of $0.16^\circ$ cannot be sewn without the fabric bunching. Two edges
+corner of $0.12^\circ$ cannot be sewn without the fabric bunching. Two edges
 sewn together whose lengths differ by $9\%$ will pucker --- unless the
 difference is a gather the designer asked for, in which case it is correct
 construction. Nothing in the current representation distinguishes these two
@@ -106,14 +118,14 @@ cases, and so no validator built on it can either.
 \begin{enumerate}\itemsep1pt
   \item A corpus-scale measurement of manufacturability on GarmentCodeData:
   20.4\% of published patterns carry a hard geometric defect and only 10.5\%
-  are clean, on patterns that already survived the authors' pipeline including
+  are fully validated, on patterns that already survived the authors' pipeline including
   physical simulation (Section~\ref{sec:res-gap}).
   \item Three minimal format extensions --- for seam ease, edge finishing, and
   seam orientation --- that make recoverable the intent the current
   representation discards (Section~\ref{sec:intent}); the third turns out not
   to be inferable from the file at all.
-  \item \textsc{Hilv\'an}, an open-source validator for panel geometry, seam
-  topology and geometric wearability, including a purely 2D criterion for
+  \item \textsc{Hilv\'an}, an open-source validator for panel geometry and seam
+  topology, with every threshold disclosed, including a purely 2D criterion for
   tangent continuity across seam crossings that needs no 3D assembly
   (Section~\ref{sec:method}). The name is the Spanish for a basting stitch: the
   provisional seam sewn to check a garment before it is sewn for real.
@@ -123,8 +135,9 @@ cases, and so no validator built on it can either.
   \item A null result: made-to-measure fitting to randomized bodies does not
   degrade pattern geometry (Section~\ref{sec:res-body}), which localizes the
   defects to the parametric design program.
-  \item The metric applied to a released generative model: none of 200 patterns
-  from AIpparel is manufacturable, and the failure is localized to seam length
+  \item The metric applied to a released generative model: 23\% (image) and
+  17\% (text) of AIpparel patterns are hard-defect-free against 78\% of the
+  corpus, none is fully validated, and the failure is localized to seam length
   agreement rather than to garment complexity or to the conditioning modality
   (Section~\ref{sec:res-gen}).
   \item A calibration account, with three independent instances, arguing that
@@ -171,11 +184,69 @@ patterns did not exist.
 \section{A Manufacturability Validator}
 \label{sec:method}
 
+\paragraph{Definitions.} Each check emits findings with a severity (error,
+warning or information). The rest of the paper uses the following terms.
+\begin{itemize}\itemsep1pt
+  \item A pattern is \emph{valid} if it parses and its seam graph resolves:
+  every vertex, panel and edge reference exists, every panel boundary is a
+  closed cycle, every seam joins exactly two edges of non-zero length, no edge
+  is sewn twice, and no panel is left unsewn.
+  All 3{,}450 corpus patterns are valid.
+  \item A \emph{hard geometric defect} is an error of one of five classes that
+  depend only on panel geometry: an edge shorter than the cuttable minimum, a
+  corner sharper than the sewable minimum (dart tips excepted), a curve tighter
+  than the sewable radius, a panel wider than the fabric roll, or a
+  self-intersecting boundary. No declaration can excuse them.
+  \item \emph{Undeclared intent} is a seam whose two sides differ in length
+  with no declared reason, or a free edge with no declared finish
+  (Section~\ref{sec:intent}).
+  \item A pattern is \emph{hard-defect-free} (HDF) if it has no hard geometric
+  defect, and \emph{fully validated} if it has no error-severity finding at
+  all. In the corpus the only error besides the hard defects is an undeclared
+  seam mismatch between 1\% and 15\%, so the gap between the two levels is
+  exactly the undeclared-intent share.
+  \item The \emph{per-seam error rate} of a set of patterns is the number of
+  error-severity findings divided by the number of seams. The numerator
+  includes panel-level defects, so the rate normalizes by garment size; it is
+  not the fraction of seams that fail.
+\end{itemize}
+We use \emph{manufacturable} only informally. Being HDF is a necessary
+condition for it under our thresholds; full validation is the strictest
+verdict the validator can issue.
+
 We organize checks into levels ordered by cost, so each filters before the next
 spends compute. Level~0 covers the geometry of a single panel; Level~1 the seam
 graph; Level~2 wearability. Everything reported here is pure geometry:
 deterministic, CPU-only, no dependency on the generator that produced the
-pattern.
+pattern. Table~\ref{tab:thresholds} lists every threshold the checks use.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\columnwidth}{@{}l r >{\raggedright\arraybackslash}X@{}}
+\toprule
+Threshold & Value & Rationale \\
+\midrule
+Min.\ edge length & 0.5\,cm & shorter edges cannot be cut or sewn as an edge \\
+Min.\ corner angle & $15^\circ$ & sharper corners cannot be sewn cleanly \\
+Min.\ curve radius & 0.3\,cm & tighter curves cannot be sewn \\
+Fabric roll width & 150\,cm & usable width of a standard roll; panels may rotate \\
+Seam tolerance & 1\% & length difference attributable to drafting rounding \\
+Gather threshold & 15\% & above it an undeclared mismatch is presumed a gather (warning) \\
+Declared-ease tolerance & 5\% & default slack on a declared length ratio \\
+Dart symmetry & 2\% & length difference allowed between the two legs of a dart \\
+Continuity tolerance & $20^\circ$ & deviation from Eq.~\ref{eq:cont} reported as a kink \\
+Vertex tolerance & 0.05\,cm & crossings closer than this to a shared vertex are ignored \\
+Curve sampling & 48 & samples per edge for intersection tests \\
+Default orientation & \code{reversed} & seam endpoint pairing when undeclared (Sec.~\ref{par:orient}) \\
+\bottomrule
+\end{tabularx}
+\caption{Validator thresholds (class \code{Limites}). Dart tips and corners
+between two straight edges at seam crossings are recognized and not reported;
+both exceptions can be disabled.}
+\label{tab:thresholds}
+\end{table}
 
 \subsection{Levels 0 and 1}
 
@@ -201,7 +272,7 @@ of the two panels' interior angles at that corner, so continuity is
   \label{eq:cont}
 \end{equation}
 with $\alpha$ and $\beta$ each measured in its own panel's 2D frame. A
-deviation means the assembled outline has a corner where a curve was presumably
+deviation larger than $20^\circ$ means the assembled outline has a corner where a curve was presumably
 intended. We report it as a warning, not an error: a kinked neckline is
 perfectly sewable, so this is design quality rather than manufacturability.
 
@@ -215,7 +286,9 @@ whether the head passes through the neckline without simulating anything. The
 check is gated on the pattern declaring what each opening must clear, how much
 the fabric stretches there, and whether a closure opens it
 (Section~\ref{sec:intent}); without those, girths are reported but nothing is
-judged.
+judged. No corpus pattern carries these declarations, so in this paper Level~2
+produces measurements only (Section~\ref{sec:res-wear}); its verdicts are not
+evaluated.
 
 \subsection{Assembly order}
 
@@ -249,10 +322,15 @@ a tolerance:
 \end{lstlisting}
 
 \noindent
-The resulting rule is not ``this is forbidden'' but ``this must be declared'',
-which gives three outcomes rather than two: declared and consistent with the
-geometry is valid; declared and contradicted by it is an error; undeclared is
-an error. We verify all three directions in the test suite.
+A declared seam passes if the measured ratio lies within the tolerance of the
+declared one and is an error otherwise. An undeclared seam is judged by its
+relative length difference in three zones. Up to 1\% it passes, as drafting
+rounding. Between 1\% and 15\% it is an error: too large for rounding, too
+small to be an obvious gather. Above 15\% it is a warning, because a
+difference that large is almost certainly a deliberate gather that nobody
+wrote down, and calling it an error would repeat the calibration failure of
+Section~\ref{sec:calibration}. The third zone is not marginal: 47\% of the
+33{,}092 undeclared mismatches in the corpus fall in it.
 
 \paragraph{Edge finishing.} An edge sewn to nothing may be a defect or may
 carry a hem, facing, binding or opening. We add a \code{finish} declaration on
@@ -295,7 +373,12 @@ it can be checked against topology: a free edge can only continue into another
 free edge, so the orientation matching more free neighbours across the seam is
 the physically consistent one. On the reference t-shirt \code{reversed} matches
 at 12 crossings and \code{direct} at 4, and a declaration contradicted this way
-is reported as a warning.
+is reported as a warning. Summed over each pattern's seams, the same count
+favors \code{reversed} in 3{,}310 of the 3{,}450 corpus patterns (95.9\%),
+favors \code{direct} in none, and ties in the remaining 140, with a median
+advantage of 8 crossings. This is why the validator assumes \code{reversed}
+when a seam declares nothing. It is a measured convention of GarmentCode's
+output, not a guarantee of the format, so another generator may break it.
 
 The consequence is quantitative, not cosmetic. Under the wrong orientation the
 four openings of a t-shirt are recovered as two loops of $129.6$\,cm, so every
@@ -389,14 +472,14 @@ citation~\citep{gcdata}, which we give.
 
 \section{Results}
 
-\subsection{Manufacturability of published patterns}
+\subsection{Hard defects in published patterns}
 \label{sec:res-gap}
 
 Table~\ref{tab:breakdown} reports the outcome over the neutral-body corpus.
-Taking any error as failure gives 89.5\%, but that figure conflates two
-different things: an edge of $0.02$\,cm cannot be cut, whereas an undeclared
-seam mismatch may be a legitimate gather nobody wrote down. Separated, one in
-five published patterns carries a defect that prevents manufacture.
+Only 10.5\% of the patterns are fully validated, but the remaining 89.5\%
+mix two different things: an edge of $0.018$\,cm cannot be cut, whereas an
+undeclared seam mismatch may be a legitimate gather nobody wrote down.
+Separated, one in five published patterns carries a hard geometric defect.
 
 \begin{table}[h]
 \centering
@@ -406,7 +489,7 @@ five published patterns carries a defect that prevents manufacture.
 \midrule
 Hard geometric defect & 705 & \textbf{20.4} \\
 Only undeclared intent & 2{,}383 & 69.1 \\
-Clean & 362 & 10.5 \\
+Fully validated & 362 & 10.5 \\
 \midrule
 Total & 3{,}450 & 100.0 \\
 \bottomrule
@@ -469,7 +552,7 @@ and 14 seams against 10 and 30 for the rejected. The share of curved edges is
 identical at 25\% in both groups, so the selection is on size, not on shape.
 
 The cause is not that complex garments are worse made. Figure~\ref{fig:accum}
-plots the defect-free rate against seam count together with the rate predicted
+plots the fully validated rate against seam count together with the rate predicted
 if defects were independent across seams. The \emph{per-seam} error rate is
 flat and if anything declines with garment size, from $0.264$ in patterns under
 ten seams to $0.177$ above fifty-five. A binary per-pattern filter therefore
@@ -479,7 +562,7 @@ opportunities to fail usually takes one.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{acumulacion.pdf}
-\caption{Defect-free rate by seam count (log scale), against the rate expected
+\caption{Fully validated rate by seam count (log scale), against the rate expected
 if defects were independent across seams. The observed curve lies orders of
 magnitude above the prediction --- at 20--30 seams, 8.5\% against 0.4\% --- so
 defects cluster within patterns: a genuine per-pattern quality signal exists.
@@ -523,9 +606,11 @@ with a hard defect, and $0.195$ against $0.198$ errors per seam.
 
 Aggregates can hide an effect when the two groups contain different designs, so
 we compare \emph{paired} over the 2{,}953 designs present in both, which holds
-the design fixed and varies only the body. Of these, 2{,}248 are clean on both
-and 424 defective on both; the discordant cases split 139 (defective only on
-the randomized body) against 142 (only on the neutral body). An exact McNemar
+the design fixed and varies only the body. Here a design counts as defective
+if it carries a hard geometric defect. Of the 2{,}953 designs, 2{,}248 are
+hard-defect-free on both bodies and 424 defective on both; the discordant cases
+split 139 (defective only on the randomized body) against 142 (only on the
+neutral body). An exact McNemar
 test gives $p = 0.91$: no asymmetry of any size.
 
 The accompanying positive result is the useful one. Of the 705 designs
@@ -534,34 +619,51 @@ which would not arise if the body were the cause. \textbf{The defects belong to
 the parametric design, not to the fit}, which makes them reproducible and
 fixable at source, and means corpus sanitization need not weight by body type.
 
-\subsection{Manufacturability of generated patterns}
+\subsection{Opening girths}
+\label{sec:res-wear}
+
+Under the default orientation all 3{,}450 patterns assemble into a coherent
+free boundary, with a median of four openings per garment. The smallest opening
+of a garment has a median girth of 53.4\,cm (10th percentile 25.9\,cm), and in
+171 patterns (5.0\%) it is shorter than the 21\,cm hand girth of our reference
+body. Whether any of these is a defect depends on what the opening must admit,
+whether it has a closure and how far the fabric stretches there, and no corpus
+pattern declares any of the three. We therefore report girths and issue no
+wearability verdict.
+
+\subsection{Hard defects in generated patterns}
 \label{sec:res-gen}
 
 The corpus measurement bounds what a model trained on it can learn. The
 complementary question is what a model actually emits. Table~\ref{tab:generated}
 reports AIpparel on the 100 paired garments of Section~\ref{sec:setup}.
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\begin{tabular}{lrrr}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-& Manufacturable & Seams & Open seams \\
+& \shortstack[r]{Hard-\\defect-free} & \shortstack[r]{Fully\\validated}
+& Seams & \shortstack[r]{Mismatched\\seams} \\
 \midrule
-AIpparel, from image & \textbf{0 / 100} & 31.6 & 88\% \\
-AIpparel, from text  & \textbf{0 / 100} & 26.8 & 86\% \\
-Corpus (ground truth) & 12 / 100 & 31.5 & 33\% \\
+AIpparel (image) & 23\,/\,100 & 0\,/\,100 & 31.6 & 88\% \\
+AIpparel (text)  & 17\,/\,100 & 0\,/\,100 & 26.8 & 86\% \\
+Corpus & 78\,/\,100 & 12\,/\,100 & 31.5 & 33\% \\
 \bottomrule
 \end{tabular}
-\caption{Manufacturability of generated patterns against the corpus patterns
-they were conditioned on. ``Seams'' is the mean seam count per pattern;
-``open seams'' the fraction joining edges of unequal length with no declared
-gather.}
+\caption{Generated patterns against the corpus patterns they were conditioned
+on (ground truth), 100 garments per row.
+ Seams: mean seam count per pattern. Mismatched
+seams: fraction of seams whose two sides differ in length by more than 1\%
+with no declared ease, including those above the 15\% gather threshold.}
 \label{tab:generated}
 \end{table}
 
-None of the 200 generated patterns is manufacturable. With zero successes in
-200 trials the 95\% upper confidence bound is 1.5\%, so the rate is low
-regardless of how the run happened to fall.
+Image conditioning yields 23\% hard-defect-free patterns and text
+conditioning 17\%, against 78\% for the corpus patterns the model was asked to
+reproduce. Full validation is stricter still: none of the 200 generated
+patterns passes it, against 12 of the 100 corpus patterns.
 
 The headline is less informative than the mechanism. A count of errors per
 pattern rewards whichever model emits fewer seams, so it cannot be compared
@@ -576,9 +678,9 @@ trained.
 
 The six-point gap between image conditioning (23\% free of hard defects) and
 text conditioning (17\%) does not survive the paired test it invites. Of the 100
-garments, 17 are clean only from the image and 11 only from the text; an exact
+garments, 17 are hard-defect-free only from the image and 11 only from the text; an exact
 McNemar test on the 28 discordant cases gives $p = 0.345$. On this evidence the
-conditioning modality does not change manufacturability, which is consistent
+conditioning modality does not change the hard-defect rate, which is consistent
 with the failure being a property of the output head rather than of how well the
 garment was understood.
 
@@ -587,7 +689,7 @@ design parameters rather than written by a person; were they worse than natural
 language, that would penalize the text condition, which is precisely the one
 that showed no difference. More importantly, AIpparel was trained on
 GarmentCodeData and these garments are drawn from it, so if they appeared in its
-training set, 0\% is the benign case rather than the adversarial one.
+training set, these rates are the benign case rather than the adversarial one.
 
 \subsection{Runtime}
 
@@ -613,8 +715,8 @@ for exactly this. But the larger effect is on training data. A corpus of
 construction, and Section~\ref{sec:res-filter} shows that cleaning it requires
 care: the naive filter trades a visible bias for an invisible one.
 
-\paragraph{Reporting manufacturability as a metric.} The fraction of
-manufacturable outputs is comparable, reproducible and GPU-free, and the field
+\paragraph{Reporting validation rates as a metric.} The fraction of
+hard-defect-free and of fully validated outputs is comparable, reproducible and GPU-free, and the field
 currently does not report it. We suggest it belongs alongside the geometric
 reconstruction metrics these systems already publish. Section~\ref{sec:res-gen}
 shows why the two do not substitute for each other: a model can place panels
@@ -654,8 +756,10 @@ sewing in the round rather than true feasibility, which is a question of
 physical access and requires 3D. Drape, tension maps and dynamic poses are
 outside this work entirely; we deliberately do not report simulated verdicts,
 since without measured fabric parameters they would assert something unverified.
-Finally, continuity findings are a lower bound wherever \code{orient} is
-undeclared, which on existing corpora is everywhere.
+Wearability verdicts need \code{fits}, \code{stretch} and closure
+declarations that no existing pattern carries, so Level~2 is evaluated here
+only as girth measurement. Finally, continuity findings are a lower bound
+wherever \code{orient} is undeclared, which on existing corpora is everywhere.
 
 \paragraph{One generator measured, not a comparison.} The corpus measurements
 are on GarmentCode output and the generative measurement is on a single AIpparel
@@ -668,7 +772,7 @@ rather than the model. We can now bound the second term. Passing the
 GarmentCodeRC --- the refined GarmentCode fork that ChatGarment ships with ---
 reproduces the published pattern's verdict on 99 of 100 garments, its
 hard-defect status on 98, and its exact error count on 90; in aggregate the
-synthesizer moves manufacturability from 12\% to 13\%. The asymmetry is
+synthesizer moves the fully validated rate from 12\% to 13\%. The asymmetry is
 therefore a known offset of about one percentage point rather than an unmeasured
 confound, and a parameter-emitting model should be scored against that
 reconstruction baseline rather than against the published corpus. Our remaining
@@ -679,13 +783,16 @@ drawn from reading their code.
 
 Generative garment systems are evaluated on a property that does not imply the
 one industry needs. Measured on the field's own pre-training corpus, one in
-five published patterns cannot be manufactured, and two thirds more cannot be
-judged because the format does not record whether a seam mismatch was wanted.
+five published patterns carries a hard geometric defect, and two thirds more
+cannot be judged because the format does not record whether a seam mismatch
+was wanted.
 We release a deterministic, CPU-only validator, three format extensions that
 make that intent expressible, and the benchmarks behind these numbers.
 
-The same measurement applied to a released model returns zero manufacturable
-patterns in 200, at the same seam complexity as the corpus it was trained on.
+The same measurement applied to a released model finds 23\% (image) and 17\%
+(text) of its patterns hard-defect-free, against 78\% of the corpus garments
+it was asked to reproduce, and none fully validated, at the same seam
+complexity as the corpus it was trained on.
 The defect is specific --- edges that must be sewn together are predicted
 independently and do not end up the same length --- which is the kind of failure
 a metric can drive out and a reconstruction loss cannot see.

@@ -1,0 +1,195 @@
+{
+ "neutro": {
+  "patrones": 3450,
+  "con_defecto_duro": 705,
+  "pct_defecto_duro": 20.43,
+  "solo_intencion": 2383,
+  "pct_solo_intencion": 69.07,
+  "cero_errores": 362,
+  "pct_cero_errores": 10.49,
+  "clases_duras": {
+   "auto_interseccion": {
+    "patrones": 3,
+    "casos": 6
+   },
+   "borde_degenerado": {
+    "patrones": 501,
+    "casos": 1921
+   },
+   "curvatura_excesiva": {
+    "patrones": 0,
+    "casos": 0
+   },
+   "esquina_aguda": {
+    "patrones": 234,
+    "casos": 836
+   },
+   "excede_ancho_rollo": {
+    "patrones": 4,
+    "casos": 8
+   }
+  },
+  "errores_por_costura": 0.1948,
+  "borde_corto_cm": {
+   "p10": 0.075,
+   "p25": 0.075,
+   "p50": 0.146,
+   "p75": 0.386,
+   "p90": 0.477,
+   "min": 0.018,
+   "n": 1921
+  },
+  "esquina_aguda_grados": {
+   "p10": 4.455,
+   "p25": 7.2575,
+   "p50": 11.15,
+   "p75": 13.59,
+   "p90": 14.73,
+   "min": 0.12,
+   "n": 836
+  },
+  "desajuste_error_rel": {
+   "p10": 0.017,
+   "p25": 0.0252,
+   "p50": 0.0564,
+   "p75": 0.0729,
+   "p90": 0.1069,
+   "min": 0.01,
+   "n": 17498
+  },
+  "desajuste_todos_rel": {
+   "p10": 0.0247,
+   "p25": 0.0489,
+   "p50": 0.1251,
+   "p75": 0.3141,
+   "p90": 0.4481,
+   "min": 0.01,
+   "n": 33092,
+   "frac_sobre_umbral_fruncido": 0.4712
+  }
+ },
+ "aleatorio": {
+  "patrones": 3307,
+  "con_defecto_duro": 701,
+  "pct_defecto_duro": 21.2,
+  "solo_intencion": 2273,
+  "pct_solo_intencion": 68.73,
+  "cero_errores": 333,
+  "pct_cero_errores": 10.07,
+  "clases_duras": {
+   "auto_interseccion": {
+    "patrones": 4,
+    "casos": 7
+   },
+   "borde_degenerado": {
+    "patrones": 517,
+    "casos": 1826
+   },
+   "curvatura_excesiva": {
+    "patrones": 0,
+    "casos": 0
+   },
+   "esquina_aguda": {
+    "patrones": 227,
+    "casos": 858
+   },
+   "excede_ancho_rollo": {
+    "patrones": 1,
+    "casos": 2
+   }
+  },
+  "errores_por_costura": 0.1982,
+  "borde_corto_cm": {
+   "p10": 0.143,
+   "p25": 0.263,
+   "p50": 0.344,
+   "p75": 0.419,
+   "p90": 0.472,
+   "min": 0.018,
+   "n": 1826
+  },
+  "esquina_aguda_grados": {
+   "p10": 4.057,
+   "p25": 7.18,
+   "p50": 10.92,
+   "p75": 13.84,
+   "p90": 14.78,
+   "min": 0.19,
+   "n": 858
+  },
+  "desajuste_error_rel": {
+   "p10": 0.0155,
+   "p25": 0.0264,
+   "p50": 0.0505,
+   "p75": 0.083,
+   "p90": 0.1072,
+   "min": 0.01,
+   "n": 17597
+  },
+  "desajuste_todos_rel": {
+   "p10": 0.0214,
+   "p25": 0.0487,
+   "p50": 0.116,
+   "p75": 0.3036,
+   "p90": 0.4397,
+   "min": 0.01,
+   "n": 32579,
+   "frac_sobre_umbral_fruncido": 0.4599
+  }
+ },
+ "pareado": {
+  "disenos_pareados": 2953,
+  "limpios_ambos": 2248,
+  "rotos_ambos": 424,
+  "solo_neutro": 142,
+  "solo_aleatorio": 139,
+  "rotos_alguno": 705,
+  "mcnemar_p": 0.9051,
+  "dif_pareada_pp": -0.102,
+  "ic95_pp": [
+   -1.214,
+   1.011
+  ],
+  "tasa_neutro_pct": 19.17,
+  "tasa_aleatorio_pct": 19.07,
+  "esperado_ambos_si_independiente": 107.9,
+  "observado_sobre_esperado": 3.93
+ },
+ "orientacion": {
+  "favorecen_reversed": 3310,
+  "favorecen_direct": 0,
+  "empate": 140,
+  "pct_reversed": 95.94,
+  "pct_empate": 4.06,
+  "mediana_ventaja_reversed": 8.0
+ },
+ "nivel2_neutro": {
+  "montaje_coherente": 3450,
+  "pct_coherente": 100.0,
+  "aberturas_por_patron_mediana": 4.0,
+  "menor_abertura_cm": {
+   "p10": 25.9,
+   "p25": 40.5,
+   "p50": 53.35,
+   "p75": 84.3,
+   "p90": 90.0,
+   "min": 16.6,
+   "n": 3450
+  },
+  "mayor_abertura_cm": {
+   "p10": 86.1,
+   "p25": 105.7,
+   "p50": 148.6,
+   "p75": 241.875,
+   "p90": 403.6,
+   "min": 53.4,
+   "n": 3450
+  },
+  "patrones_con_abertura_bajo_mano": 171,
+  "patrones_mayor_abertura_bajo_cabeza": 2,
+  "cuerpo_referencia_cm": {
+   "head": 57.0,
+   "hand": 21.0
+  }
+ }
+}
