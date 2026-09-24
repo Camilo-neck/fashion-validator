@@ -36,7 +36,7 @@ def _lote(args, lim: Limites) -> int:
     def traza(res):
         estado = ("ILEGIBLE" if "ilegible" in res else
                   "FALLO" if "fallo" in res else
-                  "ok" if res["valido"] else "ROTO")
+                  "ok" if res["validado"] else "ROTO")
         print(f"{estado:9} {res['archivo']}", file=sys.stderr)
 
     informe = barrer(Path(args.patron), lim=lim, cuerpo=_cuerpo(args.cuerpo),
@@ -102,8 +102,8 @@ def main(argv: list[str] | None = None) -> int:
         for h in hallazgos:
             print(h)
 
-    # codigo de salida 1 si el patron no es valido, para encadenar en scripts
-    return 0 if resumen(hallazgos)["valido"] else 1
+    # codigo de salida 1 si el patron no pasa la validacion completa
+    return 0 if resumen(hallazgos)["validado"] else 1
 
 
 if __name__ == "__main__":

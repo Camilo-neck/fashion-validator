@@ -30,7 +30,9 @@ del corpus.
 ```console
 $ hilvan rand_023FMIGQK0_specification.json
 {
- "valido": false,
+ "valido": true,
+ "sin_defecto_duro": true,
+ "validado": false,
  "errores": 2,
  "avisos": 11,
  "por_codigo": {
@@ -191,8 +193,8 @@ hilvan patron_specification.json            # informe legible
 hilvan patron_specification.json --modelo   # errores en JSON
 ```
 
-El comando sale con código `1` si el patrón no es válido, de modo que puede
-encadenarse en scripts y pipelines de CI.
+El comando sale con código `1` si el patrón no pasa la validación completa, de
+modo que puede encadenarse en scripts y pipelines de CI.
 
 ### API de Python
 
@@ -201,9 +203,14 @@ from hilvan import validar, resumen, para_modelo, Limites
 
 hallazgos = validar(spec, Limites(ancho_rollo=140, angulo_min_esquina=12))
 
-if not resumen(hallazgos)["valido"]:
+if not resumen(hallazgos)["validado"]:
     prompt_de_reparacion = para_modelo(hallazgos)
 ```
+
+`resumen` da el veredicto en los tres niveles del paper: `valido` (el patrón se
+interpreta y el grafo de costuras resuelve), `sin_defecto_duro` y `validado`
+(ningún error). Hasta la versión 0.1.0, `valido` significaba lo que hoy es
+`validado`.
 
 ## Declarar la intención
 

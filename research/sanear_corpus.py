@@ -89,7 +89,7 @@ def medir_lote(lote, cuerpo, destino, op):
                     fila["fallo"] = f"{type(e).__name__}: {e}"
                 else:
                     r = resumen(h)
-                    fila.update(valido=r["valido"], errores=r["errores"],
+                    fila.update(valido=r["validado"], errores=r["errores"],
                                 avisos=r["avisos"], por_codigo=r["por_codigo"])
                 sal.write(json.dumps(fila, ensure_ascii=False) + "\n")
                 n += 1

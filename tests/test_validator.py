@@ -437,25 +437,65 @@ def test_barrido_no_se_cae_con_basura(tmp_path, sano):
     assert not informe["fallos_del_validador"]
 
 
+def _emitidos() -> set[str]:
+    """Los codigos que el paquete construye de verdad, leidos de su fuente."""
+    import re
+
+    import hilvan
+
+    emitidos = set()
+    for f in Path(hilvan.__file__).parent.glob("*.py"):
+        emitidos |= set(re.findall(r'Hallazgo\(\s*\d+,\s*"([a-z_]+)"',
+                                   f.read_text(encoding="utf-8")))
+    assert emitidos, "no se encontro ningun Hallazgo construido"
+    return emitidos
+
+
 def test_duros_son_codigos_que_el_validador_emite():
     """DUROS decide que se filtra de un corpus: un codigo mal escrito ahi no
-
     falla, simplemente deja pasar el defecto. Este test ata la lista a los
     codigos que checks.py construye de verdad.
     """
-    import re
-    from pathlib import Path
-
-    import hilvan
     from hilvan import DUROS
 
-    fuente = Path(hilvan.__file__).parent
-    emitidos = set()
-    for f in fuente.glob("*.py"):
-        emitidos |= set(re.findall(r'Hallazgo\(\s*\d+,\s*"([a-z_]+)"', f.read_text(encoding="utf-8")))
-
-    assert emitidos, "no se encontro ningun Hallazgo construido"
+    emitidos = _emitidos()
     assert DUROS <= emitidos, f"codigos inexistentes en DUROS: {sorted(DUROS - emitidos)}"
+
+
+def test_estructurales_son_codigos_que_el_validador_emite():
+    """Igual que DUROS: ESTRUCTURALES decide que es 'valido' en el paper."""
+    from hilvan import ESTRUCTURALES
+
+    emitidos = _emitidos()
+    assert ESTRUCTURALES <= emitidos, sorted(ESTRUCTURALES - emitidos)
+
+
+def test_resumen_en_tres_niveles(sano):
+    """Un desajuste sin declarar: valido y sin defecto duro, pero no validado."""
+    from hilvan import resumen
+
+    r = resumen(validar(_desajustar(sano)))
+    assert (r["valido"], r["sin_defecto_duro"], r["validado"]) == (True, True, False)
+    sano["pattern"]["stitches"][0][0]["edge"] = 999
+    assert resumen(validar(sano))["valido"] is False
+
+
+def test_barrido_da_el_manifiesto_sin_defecto_duro(tmp_path, sano):
+    """El manifiesto para entrenar: el desajuste no descarta, el defecto duro si."""
+    from hilvan.corpus import barrer
+
+    (tmp_path / "desajustado.json").write_text(
+        json.dumps(_desajustar(copy.deepcopy(sano))), encoding="utf-8")
+    duro = copy.deepcopy(sano)
+    panel = next(iter(duro["pattern"]["panels"].values()))
+    a, b = panel["edges"][0]["endpoints"]
+    panel["vertices"][b] = [panel["vertices"][a][0] + 0.02, panel["vertices"][a][1] + 0.02]
+    (tmp_path / "duro.json").write_text(json.dumps(duro), encoding="utf-8")
+
+    informe = barrer(tmp_path, patron="*.json")
+    assert informe["sanos"] == 0
+    assert informe["validos"] == 2
+    assert [Path(x).name for x in informe["manifiesto_sin_defecto_duro"]] == ["desajustado.json"]
 
 
 # --- esquinas convexas y concavas -------------------------------------------

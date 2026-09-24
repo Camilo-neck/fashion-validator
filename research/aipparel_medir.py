@@ -16,7 +16,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from hilvan import DUROS, Limites
+from hilvan import Limites
 from hilvan.corpus import validar_archivo
 
 LIM = Limites()
@@ -24,7 +24,7 @@ LIM = Limites()
 
 def medir(rutas: list[Path]) -> dict:
     """Recuento de un grupo sobre todas las rutas esperadas, existan o no."""
-    presentes = legibles = limpios = sin_duro = errores = 0
+    presentes = legibles = validos = limpios = sin_duro = errores = 0
     codigos: Counter = Counter()
     for r in rutas:
         if not r.exists():
@@ -38,10 +38,11 @@ def medir(rutas: list[Path]) -> dict:
         legibles += 1
         errores += res["errores"]
         codigos.update(res["por_codigo"])
-        limpios += res["valido"]
-        sin_duro += not (DUROS & set(res["por_codigo"]))
+        validos += res["valido"]
+        limpios += res["validado"]
+        sin_duro += res["sin_defecto_duro"]
     return {"n_esperado": len(rutas), "n_presente": presentes, "n_legible": legibles,
-            "validado": limpios, "sin_defecto_duro": sin_duro,
+            "valido": validos, "validado": limpios, "sin_defecto_duro": sin_duro,
             "errores_por_patron_legible": round(errores / legibles, 1) if legibles else None,
             "por_codigo": dict(codigos.most_common())}
 

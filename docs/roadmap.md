@@ -49,7 +49,7 @@ La simulación física cuesta GPU y minutos; validar cuesta milisegundos. Con un
 tasa de defectos del 77%, simular sin filtrar es gastar la mayor parte del
 cómputo en patrones que no se pueden coser.
 
-Es la ganancia más inmediata y no exige tocar el modelo: `resumen(h)["valido"]`
+Es la ganancia más inmediata y no exige tocar el modelo: `resumen(h)["validado"]`
 delante de la llamada al simulador.
 
 ### 3. Bucle de reparación en inferencia

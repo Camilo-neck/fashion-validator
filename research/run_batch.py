@@ -46,7 +46,7 @@ def main(n, seed=11):
         spec = {'pattern': pattern.pattern}
         hs = validar(spec, lim)
         r = resumen(hs)
-        if not r['valido']:
+        if not r['validado']:
             patrones_con_error += 1
         for h in hs:
             if h.severidad in ('error', 'aviso'):

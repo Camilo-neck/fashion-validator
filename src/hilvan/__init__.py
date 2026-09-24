@@ -7,7 +7,7 @@ modelo generativo que repare el patron.
     from hilvan import validar, resumen, para_modelo
 
     hallazgos = validar(spec)
-    if not resumen(hallazgos)['valido']:
+    if not resumen(hallazgos)['validado']:
         prompt = para_modelo(hallazgos)
 """
 
@@ -16,12 +16,12 @@ from __future__ import annotations
 from .checks import nivel0, nivel1
 from .nivel2 import nivel2, bucles_libres
 from .geometry import longitud, segmento
-from .model import (Cuerpo, DUROS, Hallazgo, Limites, SEVERIDAD_ORDEN,
-                    para_modelo, resumen)
+from .model import (Cuerpo, DUROS, ESTRUCTURALES, Hallazgo, Limites,
+                    SEVERIDAD_ORDEN, para_modelo, resumen)
 
 __all__ = ["validar", "resumen", "para_modelo", "Limites", "Cuerpo", "Hallazgo",
-           "DUROS", "nivel0", "nivel1", "nivel2", "bucles_libres", "longitud",
-           "segmento"]
+           "DUROS", "ESTRUCTURALES", "nivel0", "nivel1", "nivel2", "bucles_libres",
+           "longitud", "segmento"]
 
 __version__ = "0.1.0"
 

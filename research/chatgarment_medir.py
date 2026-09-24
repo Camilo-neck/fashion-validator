@@ -66,7 +66,7 @@ def medir(rutas_por_prenda):
         for r in res:
             propios.update(r["por_codigo"])
         codigos.update(propios)
-        if all(r["valido"] for r in res):
+        if all(r["validado"] for r in res):
             limpias += 1
         if not (DUROS & set(propios)):
             sin_duro += 1

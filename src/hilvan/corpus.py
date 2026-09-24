@@ -46,8 +46,9 @@ def validar_archivo(ruta: Path, lim: Limites, cuerpo: Cuerpo | None = None) -> d
         return {"archivo": str(ruta), "fallo": f"{type(e).__name__}: {e}"}
 
     r = resumen(hallazgos)
-    return {"archivo": str(ruta), "valido": r["valido"], "errores": r["errores"],
-            "avisos": r["avisos"], "por_codigo": r["por_codigo"]}
+    return {"archivo": str(ruta), "valido": r["valido"],
+            "sin_defecto_duro": r["sin_defecto_duro"], "validado": r["validado"],
+            "errores": r["errores"], "avisos": r["avisos"], "por_codigo": r["por_codigo"]}
 
 
 def barrer(raiz: Path, patron: str = "*specification.json",
@@ -65,6 +66,8 @@ def barrer(raiz: Path, patron: str = "*specification.json",
         rutas = rutas[:limite]
 
     codigos: Counter = Counter()
+    validos = 0
+    sin_duro: list[str] = []
     sanos: list[str] = []
     rotos: list[str] = []
     ilegibles: list[dict] = []
@@ -81,7 +84,10 @@ def barrer(raiz: Path, patron: str = "*specification.json",
             fallos.append(res)
             continue
         codigos.update(res["por_codigo"])
-        (sanos if res["valido"] else rotos).append(res["archivo"])
+        validos += res["valido"]
+        if res["sin_defecto_duro"]:
+            sin_duro.append(res["archivo"])
+        (sanos if res["validado"] else rotos).append(res["archivo"])
 
     medidos = len(sanos) + len(rotos)
     return {
@@ -90,8 +96,13 @@ def barrer(raiz: Path, patron: str = "*specification.json",
         "sanos": len(sanos),
         "rotos": len(rotos),
         "pct_rechazados": round(100 * len(rotos) / medidos, 1) if medidos else 0.0,
+        "validos": validos,
+        "sin_defecto_duro": len(sin_duro),
         "hallazgos_por_codigo": dict(codigos.most_common()),
         "ilegibles": ilegibles[:20],
         "fallos_del_validador": fallos[:20],
         "manifiesto_sanos": sanos,
+        # el filtro que conviene para entrenar: el de cero errores castiga el
+        # tamano de la prenda, porque los desajustes se acumulan con las costuras
+        "manifiesto_sin_defecto_duro": sin_duro,
     }

@@ -7,7 +7,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Any
 
 __all__ = ["Limites", "Cuerpo", "Hallazgo", "resumen", "para_modelo",
-           "SEVERIDAD_ORDEN", "DUROS"]
+           "SEVERIDAD_ORDEN", "DUROS", "ESTRUCTURALES"]
 
 
 @dataclass
@@ -90,6 +90,16 @@ SEVERIDAD_ORDEN = {"error": 0, "aviso": 1, "info": 2}
 DUROS = frozenset({"borde_degenerado", "esquina_aguda", "curvatura_excesiva",
                    "excede_ancho_rollo", "auto_interseccion"})
 
+# Errores que impiden interpretar el patron: una referencia que no existe, un
+# contorno que no cierra, una costura que no une dos bordes, un borde cosido
+# dos veces o un panel suelto. Un patron sin ninguno es "valido" en el sentido
+# del paper (se interpreta y el grafo de costuras resuelve), que es mucho menos
+# que estar validado.
+ESTRUCTURALES = frozenset({"vertice_inexistente", "contorno_abierto",
+                           "costura_no_binaria", "panel_inexistente",
+                           "borde_inexistente", "costura_nula",
+                           "borde_multicosido", "panel_suelto"})
+
 
 @dataclass
 class Hallazgo:
@@ -118,14 +128,25 @@ class Hallazgo:
 
 
 def resumen(hallazgos: list[Hallazgo]) -> dict:
-    """Veredicto compacto: valido o no, y el recuento por codigo."""
+    """Veredicto compacto en los tres niveles del paper, y el recuento por codigo.
+
+    - `valido`: sin errores estructurales; el patron se interpreta.
+    - `sin_defecto_duro`: sin ningun defecto de DUROS.
+    - `validado`: sin ningun error. Es lo que antes se llamaba `valido`; el
+      nombre cambio porque "valido" en el paper es la propiedad mas debil.
+    """
     por_codigo: dict[str, int] = {}
     por_sev: dict[str, int] = {}
+    errores: set[str] = set()
     for h in hallazgos:
         por_codigo[h.codigo] = por_codigo.get(h.codigo, 0) + 1
         por_sev[h.severidad] = por_sev.get(h.severidad, 0) + 1
+        if h.severidad == "error":
+            errores.add(h.codigo)
     return {
-        "valido": por_sev.get("error", 0) == 0,
+        "valido": not (errores & ESTRUCTURALES),
+        "sin_defecto_duro": not (errores & DUROS),
+        "validado": not errores,
         "errores": por_sev.get("error", 0),
         "avisos": por_sev.get("aviso", 0),
         "por_codigo": por_codigo,
