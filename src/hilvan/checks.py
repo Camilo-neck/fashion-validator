@@ -456,16 +456,22 @@ def nivel1(pattern: dict, lim: Limites) -> list[Hallazgo]:
 
         if declaracion is None:
             if rel > lim.umbral_fruncido:
-                # tan grande que casi seguro es deliberado, pero nadie lo declaro
+                # Tan grande que casi seguro es deliberado, pero nadie lo declaro.
+                # La severidad no es monotona a proposito: un 12% es error y un
+                # 16% aviso, porque el 12% no tiene explicacion y el 16% si.
                 out.append(Hallazgo(
                     1, "fruncido_no_declarado", "aviso",
                     f"los bordes miden {L[0]:.2f} y {L[1]:.2f} cm ({rel * 100:.1f}% de "
-                    f"diferencia): parece un fruncido intencional, pero el patron no lo "
-                    f"declara y no hay forma de distinguirlo de un defecto",
+                    f"diferencia): supera el umbral_fruncido del "
+                    f"{lim.umbral_fruncido * 100:g}%, asi que se presume un fruncido "
+                    f"intencional; el patron no lo declara y no hay forma de distinguirlo "
+                    f"de un defecto",
                     costura=si,
                     medido={"largo_a_cm": round(L[0], 2), "largo_b_cm": round(L[1], 2),
                             "desajuste_rel": round(rel, 4), "desajuste_rel_exacto": rel,
-                            "ratio": round(mayor / menor, 3) if menor > 1e-9 else None}))
+                            "ratio": round(mayor / menor, 3) if menor > 1e-9 else None,
+                            "presunto": "fruncido",
+                            "umbral_fruncido": lim.umbral_fruncido}))
             elif rel > lim.tol_costura:
                 # demasiado grande para ser redondeo, demasiado chico para ser fruncido
                 out.append(Hallazgo(

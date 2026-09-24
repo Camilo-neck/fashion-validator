@@ -629,3 +629,22 @@ def test_ease_se_mide_desde_el_lado_que_lo_declara():
         spec = _costura(75)
         spec["pattern"]["stitches"][0][lado]["ease"] = {"type": "gather", "ratio": ratio}
         assert ("ease_incongruente" not in errores(spec)) is bien, (lado, ratio)
+
+
+@pytest.mark.parametrize("largo_b, esperado", [
+    (99.0, []),                                            # 1% exacto: pasa
+    (98.9, [("desajuste_no_declarado", "error")]),         # 1.1%: error
+    (85.0, [("desajuste_no_declarado", "error")]),         # 15% exacto: todavia error
+    (84.99, [("fruncido_no_declarado", "aviso")]),         # 15.01%: se presume fruncido
+])
+def test_frontera_de_las_zonas_de_desajuste(largo_b, esperado):
+    from test_research import _costura
+
+    hallazgos = [h for h in validar(_costura(largo_b))
+                 if h.codigo in ("desajuste_no_declarado", "fruncido_no_declarado")]
+    assert [(h.codigo, h.severidad) for h in hallazgos] == esperado
+    for h in hallazgos:
+        if h.codigo == "fruncido_no_declarado":
+            assert h.medido["presunto"] == "fruncido"
+            assert h.medido["umbral_fruncido"] == 0.15
+            assert "umbral_fruncido" in h.mensaje
