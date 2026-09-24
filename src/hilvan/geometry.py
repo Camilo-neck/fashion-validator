@@ -18,7 +18,7 @@ from .model import Limites
 __all__ = ["a_complejo", "rel_a_abs_2d", "segmento", "longitud",
            "radio_curvatura_min", "tangente_saliente", "angulo_entre",
            "ciclos", "angulos_interiores", "angulo_interior",
-           "linealizar", "caja", "solapan", "cruce_real"]
+           "linealizar", "caja", "solapan", "cruce_real", "autocruce"]
 
 
 def a_complejo(p) -> complex:
@@ -252,4 +252,28 @@ def cruce_real(poli1: list[Line], poli2: list[Line], extremos: list[complex],
                 if any(abs(p - v) < lim.eps_vertice for v in extremos):
                     continue
                 return p
+    return None
+
+
+def autocruce(poli: list[Line], lim: Limites):
+    """Punto donde una polilinea se cruza a si misma, o None.
+
+    Compara solo tramos no contiguos: dos tramos seguidos se tocan siempre en
+    su vertice comun. Si el borde empieza y acaba en el mismo punto, ese
+    contacto tampoco cuenta.
+    """
+    cajas = [caja([t]) for t in poli]
+    cerrado = len(poli) > 2 and abs(poli[0].start - poli[-1].end) < lim.eps_vertice
+    for i in range(len(poli)):
+        for j in range(i + 2, len(poli)):
+            if cerrado and i == 0 and j == len(poli) - 1:
+                continue
+            if not solapan(cajas[i], cajas[j]):
+                continue
+            try:
+                cruces = poli[i].intersect(poli[j])
+            except Exception:
+                continue
+            if cruces:
+                return poli[i].point(cruces[0][0])
     return None

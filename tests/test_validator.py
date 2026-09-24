@@ -578,3 +578,24 @@ def test_contorno_con_dos_ciclos():
     assert "contorno_multiple" in errores(spec)
     assert "contorno_multiple" in ESTRUCTURALES
     assert resumen(validar(spec))["valido"] is False
+
+
+def test_borde_que_se_cruza_consigo_mismo():
+    """Una cubica con los controles cruzados hace un bucle sobre si misma."""
+    panel = {"vertices": [[0, 0], [10, 0], [10, -10], [0, -10]],
+             "edges": [{"endpoints": [0, 1],
+                        "curvature": {"type": "cubic", "params": [[1.5, 1], [-0.5, 1]]}},
+                       {"endpoints": [1, 2]}, {"endpoints": [2, 3]}, {"endpoints": [3, 0]}]}
+    spec = {"pattern": {"panels": {"p": panel}, "stitches": []}}
+    bucles = [h for h in validar(spec)
+              if h.codigo == "auto_interseccion" and h.medido["otro_borde"] == h.borde]
+    assert len(bucles) == 1 and bucles[0].borde == 0
+
+
+def test_cubica_sin_bucle_no_se_cruza():
+    panel = {"vertices": [[0, 0], [10, 0], [10, -10], [0, -10]],
+             "edges": [{"endpoints": [0, 1],
+                        "curvature": {"type": "cubic", "params": [[0.3, 0.2], [0.7, 0.2]]}},
+                       {"endpoints": [1, 2]}, {"endpoints": [2, 3]}, {"endpoints": [3, 0]}]}
+    spec = {"pattern": {"panels": {"p": panel}, "stitches": []}}
+    assert "auto_interseccion" not in errores(spec)

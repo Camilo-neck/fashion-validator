@@ -13,10 +13,11 @@ from __future__ import annotations
 import math
 
 import numpy as np
+from svgpathtools import CubicBezier
 
 from .geometry import (a_complejo, segmento, longitud, radio_curvatura_min,
                        angulos_interiores, ciclos, linealizar, caja,
-                       solapan, cruce_real)
+                       solapan, cruce_real, autocruce)
 from .model import Hallazgo, Limites
 
 __all__ = ["nivel0", "nivel1"]
@@ -162,6 +163,16 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
         polis = [linealizar(s, lim.muestras_linealizacion) for s in segs]
         cajas = [caja(p) for p in polis]
         for i in range(len(segs)):
+            # un borde tambien puede cruzarse consigo mismo: el bucle de una
+            # cubica. Rectas, cuadraticas y arcos de menos de una vuelta no pueden
+            if isinstance(segs[i], CubicBezier):
+                p = autocruce(polis[i], lim)
+                if p is not None:
+                    out.append(Hallazgo(0, "auto_interseccion", "error",
+                                        f"el borde {i} se cruza consigo mismo",
+                                        panel=nombre, borde=i,
+                                        medido={"otro_borde": i,
+                                                "punto": [round(p.real, 2), round(p.imag, 2)]}))
             for j in range(i + 1, len(segs)):
                 if not solapan(cajas[i], cajas[j], lim.eps_vertice):
                     continue
