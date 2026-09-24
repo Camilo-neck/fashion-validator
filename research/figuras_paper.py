@@ -17,6 +17,7 @@ import numpy as np
 
 sys.path.insert(0, "src")
 from hilvan import DUROS, validar
+from numeros_paper import comprobar_supuesto
 
 # paleta categorica validada con el validador de dataviz (modo claro)
 AZUL, NARANJA, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
@@ -52,14 +53,17 @@ def tipo(pat):
 
 def medir(carpeta):
     filas = []
+    vistos = set()
     for r in sorted(Path(carpeta).glob("*specification.json")):
         spec = json.load(open(r, encoding="utf-8"))
         pat = spec.get("pattern", spec)
         errs = [h for h in validar(spec) if h.severidad == "error"]
+        vistos.update(h.codigo for h in errs)
         filas.append({"tipo": tipo(pat),
                       "costuras": max(len(pat.get("stitches", [])), 1),
                       "errores": len(errs),
                       "duros": sum(1 for h in errs if h.codigo in DUROS)})
+    comprobar_supuesto(vistos)
     return filas
 
 

@@ -36,3 +36,13 @@ def test_mcnemar_trata_la_salida_faltante_como_fallo(tmp_path):
                   "b": {"image": None, "description": sano},
                   "c": {"image": None, "description": None}}
     assert aipparel_contraste.discordantes(por_prenda) == (1, 1)
+
+
+def test_supuesto_de_errores_del_paper():
+    """Solo duros y desajustes no declarados; cualquier otro error para el script."""
+    import pytest
+    from numeros_paper import comprobar_supuesto
+
+    comprobar_supuesto({"borde_degenerado", "esquina_aguda", "desajuste_no_declarado"})
+    with pytest.raises(SystemExit, match="ease_incongruente"):
+        comprobar_supuesto({"borde_degenerado", "ease_incongruente"})

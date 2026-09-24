@@ -23,6 +23,20 @@ from hilvan.geometry import angulos_interiores, segmento
 
 LIM = Limites()
 DESAJUSTE = ("desajuste_no_declarado", "fruncido_no_declarado")
+# El paper separa los errores en defectos duros e intencion no declarada, y da
+# por hecho que en el corpus no hay otro error. Si aparece otro, "solo
+# intencion" y "validado" dejarian de sumar lo que dicen.
+ERRORES_ESPERADOS = DUROS | {"desajuste_no_declarado"}
+
+
+def comprobar_supuesto(codigos_de_error) -> None:
+    """Falla si hay errores que no son ni duros ni desajustes no declarados."""
+    otros = set(codigos_de_error) - ERRORES_ESPERADOS
+    if otros:
+        raise SystemExit(
+            f"el corpus tiene errores fuera de DUROS y desajuste_no_declarado: "
+            f"{sorted(otros)}; las cifras de 'solo intencion' y 'validado' del "
+            f"paper suponen que no hay ninguno")
 
 
 def cruces_libres(pattern):
@@ -60,11 +74,13 @@ def cruces_libres(pattern):
 
 def medir(carpeta, orientacion=False):
     filas = {}
+    vistos = set()
     for r in sorted(Path(carpeta).glob("*specification.json")):
         spec = json.loads(r.read_text(encoding="utf-8"))
         pat = spec.get("pattern", spec)
         hs = validar(spec, LIM)
         errs = [h for h in hs if h.severidad == "error"]
+        vistos.update(h.codigo for h in errs)
         fila = {
             "costuras": len(pat.get("stitches", [])),
             "errores": len(errs),
@@ -83,6 +99,7 @@ def medir(carpeta, orientacion=False):
         if orientacion:
             fila["orient"] = cruces_libres(pat)
         filas[r.name.replace("_specification.json", "")] = fila
+    comprobar_supuesto(vistos)
     return filas
 
 

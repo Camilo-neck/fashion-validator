@@ -24,6 +24,7 @@ sys.path.insert(0, "src")
 sys.path.insert(0, "research")
 from hilvan import DUROS, Limites, longitud, validar
 from figuras_paper import AZUL, NARANJA, TINTA2, REJILLA  # paleta y estilo del paper
+from numeros_paper import comprobar_supuesto
 
 POR_DEFECTO = Limites()
 EXTREMO = Limites(largo_min_borde=1.0, angulo_min_esquina=25.0, tol_costura=0.005)
@@ -36,10 +37,12 @@ BARRIDOS = {
 
 def medir(carpeta):
     filas = []
+    vistos = set()
     for r in sorted(Path(carpeta).glob("*specification.json")):
         spec = json.loads(r.read_text(encoding="utf-8"))
         pat = spec.get("pattern", spec)
         hs = validar(spec, EXTREMO)
+        vistos.update(h.codigo for h in hs if h.severidad == "error")
         filas.append({
             # la longitud exacta: `largo_cm` viene redondeado a 3 decimales y un
             # borde de 0,4996 cm quedaria en 0,5, fuera del umbral
@@ -53,6 +56,8 @@ def medir(carpeta):
             "otro_duro": any(h.codigo in DUROS - {"borde_degenerado", "esquina_aguda"}
                              for h in hs if h.severidad == "error"),
         })
+    # "validado" en el barrido de tolerancia supone que solo hay duros y desajustes
+    comprobar_supuesto(vistos)
     return filas
 
 
