@@ -450,7 +450,9 @@ def nivel1(pattern: dict, lim: Limites) -> list[Hallazgo]:
             continue
 
         rel = abs(L[0] - L[1]) / mayor
-        declaracion = next((l["ease"] for l in lados if isinstance(l.get("ease"), dict)), None)
+        # el lado que declara el ease: el ratio es su largo entre el del otro
+        k = next((i for i, l in enumerate(lados) if isinstance(l.get("ease"), dict)), None)
+        declaracion = lados[k]["ease"] if k is not None else None
 
         if declaracion is None:
             if rel > lim.umbral_fruncido:
@@ -475,9 +477,12 @@ def nivel1(pattern: dict, lim: Limites) -> list[Hallazgo]:
                             "desajuste_rel": round(rel, 4),
                             "desajuste_rel_exacto": rel}))
         else:
+            # Convenio: `ratio` es cuantas veces mide el lado que declara el
+            # ease lo que mide el otro. Un fruncido declarado en el lado largo
+            # da mas de 1; el mismo fruncido declarado en el lado corto, menos.
             ratio_decl = float(declaracion.get("ratio", 1.0))
             tol = float(declaracion.get("tol", lim.tol_ease_default))
-            ratio_real = mayor / menor if menor > 1e-9 else math.inf
+            ratio_real = L[k] / L[1 - k] if L[1 - k] > 1e-9 else math.inf
             if abs(ratio_real - ratio_decl) > tol * max(1.0, ratio_decl):
                 out.append(Hallazgo(
                     1, "ease_incongruente", "error",

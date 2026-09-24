@@ -619,3 +619,13 @@ def test_panel_girado_que_no_cabe():
                  if h.codigo == "excede_ancho_rollo"]
     assert len(hallazgos) == 1
     assert hallazgos[0].medido["ancho_cm"] == pytest.approx(160.0, abs=0.1)
+
+
+def test_ease_se_mide_desde_el_lado_que_lo_declara():
+    """Costura de 100 contra 75 cm: 0.75 desde el lado corto, 1.33 desde el largo."""
+    from test_research import _costura
+
+    for lado, ratio, bien in ((1, 0.75, True), (0, 100 / 75, True), (1, 100 / 75, False)):
+        spec = _costura(75)
+        spec["pattern"]["stitches"][0][lado]["ease"] = {"type": "gather", "ratio": ratio}
+        assert ("ease_incongruente" not in errores(spec)) is bien, (lado, ratio)

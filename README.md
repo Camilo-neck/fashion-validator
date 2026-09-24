@@ -230,7 +230,7 @@ Por eso el validador acepta un campo opcional `ease`:
 | Campo | Significado |
 | --- | --- |
 | `type` | `gather` (fruncido), `ease` (embebido), `stretch` (tejido elástico) |
-| `ratio` | cuántas veces más largo es este borde que el opuesto |
+| `ratio` | largo del borde que declara el `ease` dividido por el del borde opuesto: más de 1 si se declara en el lado largo, menos de 1 en el corto |
 | `tol` | tolerancia relativa sobre ese ratio (por defecto `0.05`) |
 
 Declarado y coherente con la geometría, el patrón es válido. Declarado pero
