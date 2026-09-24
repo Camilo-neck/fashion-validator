@@ -87,7 +87,12 @@ def medir(carpeta, orientacion=False):
             "duros": Counter(h.codigo for h in errs if h.codigo in DUROS),
             "bordes_cortos": [h.medido["largo_cm"] for h in hs if h.codigo == "borde_degenerado"],
             "esquinas": [h.medido["angulo_grados"] for h in hs if h.codigo == "esquina_aguda"],
-            "desajustes": [h.medido["desajuste_rel"] for h in hs if h.codigo in DESAJUSTE],
+            # por codigo, no por el valor: desajuste_rel esta redondeado a 4
+            # decimales y un 15,004% quedaria del lado del error
+            "desajustes": [h.medido["desajuste_rel_exacto"] for h in hs
+                           if h.codigo in DESAJUSTE],
+            "desajustes_error": [h.medido["desajuste_rel_exacto"] for h in hs
+                                 if h.codigo == "desajuste_no_declarado"],
             "aberturas": [h.medido["contorno_cm"] for h in hs
                           if h.nivel == 2 and h.codigo == "abertura"],
             "montaje_incoherente": any(h.codigo == "montaje_incoherente" for h in hs),
@@ -130,10 +135,10 @@ def resumen(filas):
             casos[c] += m
     todos = lambda campo: [x for f in filas.values() for x in f[campo]]
     cortos, esquinas, desaj = todos("bordes_cortos"), todos("esquinas"), todos("desajustes")
-    desaj_err = [x for x in desaj if x <= LIM.umbral_fruncido]
+    desaj_err = todos("desajustes_error")
     rech = [f for f in filas.values() if f["errores"]]
     limp = [f for f in filas.values() if not f["errores"]]
-    medianas = lambda g: {
+    medianas = lambda g: None if not g else {
         "paneles": float(np.median([f["paneles"] for f in g])),
         "costuras": float(np.median([f["costuras"] for f in g])),
         "bordes": float(np.median([f["bordes"] for f in g])),
@@ -154,8 +159,8 @@ def resumen(filas):
         # desajuste_no_declarado es la zona de error (1-15%): la de la tabla de margenes
         "desajuste_error_rel": cuantiles(desaj_err),
         "desajuste_todos_rel": cuantiles(desaj) | {
-            "frac_sobre_umbral_fruncido": round(sum(x > LIM.umbral_fruncido for x in desaj)
-                                                / len(desaj), 4)},
+            "frac_sobre_umbral_fruncido": round(1 - len(desaj_err) / len(desaj), 4)
+            if desaj else None},
     }
 
 

@@ -557,3 +557,9 @@ def test_punta_isosceles_no_es_pinza():
     codigos = {h.codigo for h in validar(_panel_solo([[0, 0], [40, -2.8], [40, 2.8]]))}
     assert "esquina_aguda" in codigos
     assert "pico_de_pinza" not in codigos
+
+
+def test_desajuste_expone_el_valor_exacto(sano):
+    """desajuste_rel va redondeado para leerlo; el exacto es el que decide."""
+    h = next(h for h in validar(_desajustar(sano)) if h.codigo == "desajuste_no_declarado")
+    assert h.medido["desajuste_rel"] == round(h.medido["desajuste_rel_exacto"], 4)

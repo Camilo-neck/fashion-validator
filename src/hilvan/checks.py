@@ -440,7 +440,7 @@ def nivel1(pattern: dict, lim: Limites) -> list[Hallazgo]:
                     f"declara y no hay forma de distinguirlo de un defecto",
                     costura=si,
                     medido={"largo_a_cm": round(L[0], 2), "largo_b_cm": round(L[1], 2),
-                            "desajuste_rel": round(rel, 4),
+                            "desajuste_rel": round(rel, 4), "desajuste_rel_exacto": rel,
                             "ratio": round(mayor / menor, 3) if menor > 1e-9 else None}))
             elif rel > lim.tol_costura:
                 # demasiado grande para ser redondeo, demasiado chico para ser fruncido
@@ -450,7 +450,8 @@ def nivel1(pattern: dict, lim: Limites) -> list[Hallazgo]:
                     f"diferencia) y no hay declaracion de fruncido o embebido",
                     costura=si,
                     medido={"largo_a_cm": round(L[0], 2), "largo_b_cm": round(L[1], 2),
-                            "desajuste_rel": round(rel, 4)}))
+                            "desajuste_rel": round(rel, 4),
+                            "desajuste_rel_exacto": rel}))
         else:
             ratio_decl = float(declaracion.get("ratio", 1.0))
             tol = float(declaracion.get("tol", lim.tol_ease_default))

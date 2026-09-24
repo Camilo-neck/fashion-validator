@@ -50,7 +50,7 @@ def medir(carpeta):
                           if h.codigo == "borde_degenerado"), default=np.inf),
             "esquina": min((h.medido["angulo_grados"] for h in hs
                             if h.codigo == "esquina_aguda"), default=np.inf),
-            "desajuste": max((h.medido["desajuste_rel"] for h in hs
+            "desajuste": max((h.medido["desajuste_rel_exacto"] for h in hs
                               if h.codigo == "desajuste_no_declarado"), default=0.0),
             # clases duras que no dependen de estos tres umbrales
             "otro_duro": any(h.codigo in DUROS - {"borde_degenerado", "esquina_aguda"}
