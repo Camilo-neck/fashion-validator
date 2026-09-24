@@ -5,69 +5,81 @@ una descripcion de texto, y el patron original de GarmentCodeData. Que el ground
 truth pase por el mismo validador es lo que hace comparable el numero: sin esa
 columna, un 0% de AIpparel no dice si el modelo falla o si la vara es imposible.
 
-Uso: python medir_lote.py <dir_salida_inferencia> <indice.json> <dir_corpus>
+Toda muestra esperada cuenta en el denominador. Una salida que no existe, que no
+se puede leer o que tumba al validador es un patron que no sirve: si se sacara
+del denominador, el porcentaje favoreceria al modelo justo en sus peores casos.
+
+Uso: python aipparel_medir.py <dir_salida_inferencia> <indice.json> <dir_corpus>
 """
-import json, sys
+import json
+import sys
 from collections import Counter
 from pathlib import Path
 
 from hilvan import DUROS, Limites
 from hilvan.corpus import validar_archivo
 
-SALIDA, INDICE, CORPUS = (Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))
-lim = Limites()
+LIM = Limites()
 
 
-def medir(rutas):
-    """Devuelve (n, limpios, sin_defecto_duro, codigos, errores_totales)."""
-    limpios = blandos = n = 0
-    codigos = Counter()
-    errores = 0
+def medir(rutas: list[Path]) -> dict:
+    """Recuento de un grupo sobre todas las rutas esperadas, existan o no."""
+    presentes = legibles = limpios = sin_duro = errores = 0
+    codigos: Counter = Counter()
     for r in rutas:
-        res = validar_archivo(r, lim)
+        if not r.exists():
+            codigos["sin_salida"] += 1
+            continue
+        presentes += 1
+        res = validar_archivo(r, LIM)
         if "ilegible" in res or "fallo" in res:
             codigos[res.get("ilegible") or "fallo_validador"] += 1
             continue
-        n += 1
+        legibles += 1
         errores += res["errores"]
         codigos.update(res["por_codigo"])
-        if res["valido"]:
-            limpios += 1
-        if not (DUROS & set(res["por_codigo"])):
-            blandos += 1
-    return n, limpios, blandos, codigos, errores
+        limpios += res["valido"]
+        sin_duro += not (DUROS & set(res["por_codigo"]))
+    return {"n_esperado": len(rutas), "n_presente": presentes, "n_legible": legibles,
+            "validado": limpios, "sin_defecto_duro": sin_duro,
+            "errores_por_patron_legible": round(errores / legibles, 1) if legibles else None,
+            "por_codigo": dict(codigos.most_common())}
 
 
-indice = json.loads(INDICE.read_text())
-grupos = {"imagen": [], "texto": [], "corpus": []}
-for e in indice:
-    pred = SALIDA / f"sample_{e['sample']}" / "NNSewingPattern_pred_specification.json"
-    if pred.exists():
-        grupos["imagen" if e["modo"] == "image" else "texto"].append(pred)
-# el ground truth va una sola vez por prenda, no dos
-for pid in sorted({e["prenda"] for e in indice}):
-    orig = CORPUS / f"rand_{pid}_specification.json"
-    if orig.exists():
-        grupos["corpus"].append(orig)
+def grupos(salida: Path, indice: list[dict], corpus: Path) -> dict[str, list[Path]]:
+    """Las rutas que deberian existir, una por muestra pedida y una por prenda."""
+    out = {"imagen": [], "texto": [], "corpus": []}
+    for e in indice:
+        pred = salida / f"sample_{e['sample']}" / "NNSewingPattern_pred_specification.json"
+        out["imagen" if e["modo"] == "image" else "texto"].append(pred)
+    # el ground truth va una sola vez por prenda, no dos
+    for pid in sorted({e["prenda"] for e in indice}):
+        out["corpus"].append(corpus / f"rand_{pid}_specification.json")
+    return out
 
-print(f"{'grupo':10} {'n':>4} {'manufacturable':>15} {'sin defecto duro':>18} {'errores/patron':>15}")
-informe = {}
-for nombre, rutas in grupos.items():
-    n, limpios, blandos, codigos, errores = medir(rutas)
-    if not n:
-        print(f"{nombre:10} {0:>4}  (sin patrones)")
-        continue
-    informe[nombre] = {"n": n, "limpios": limpios, "sin_duro": blandos,
-                       "errores_por_patron": round(errores / n, 1),
-                       "por_codigo": dict(codigos.most_common())}
-    print(f"{nombre:10} {n:>4} {limpios:>9} ({100*limpios/n:4.1f}%) "
-          f"{blandos:>10} ({100*blandos/n:4.1f}%) {errores/n:>15.1f}")
 
-print("\ncodigos mas frecuentes por grupo")
-for nombre, d in informe.items():
-    top = list(d["por_codigo"].items())[:6]
-    print(f"  {nombre:8}", ", ".join(f"{k} x{v}" for k, v in top))
+def main(salida: Path, ruta_indice: Path, corpus: Path) -> None:
+    indice = json.loads(ruta_indice.read_text())
+    informe = {nombre: medir(rutas)
+               for nombre, rutas in grupos(salida, indice, corpus).items()}
 
-destino = INDICE.parent / "informe_aipparel.json"
-destino.write_text(json.dumps(informe, indent=1, ensure_ascii=False))
-print("\n->", destino)
+    print(f"{'grupo':8} {'esperado':>8} {'presente':>8} {'legible':>8} "
+          f"{'sin defecto duro':>18} {'validado':>12}")
+    for nombre, d in informe.items():
+        n = d["n_esperado"]
+        print(f"{nombre:8} {n:>8} {d['n_presente']:>8} {d['n_legible']:>8} "
+              f"{d['sin_defecto_duro']:>8} ({100 * d['sin_defecto_duro'] / n:4.1f}%) "
+              f"{d['validado']:>4} ({100 * d['validado'] / n:4.1f}%)")
+
+    print("\ncodigos mas frecuentes por grupo")
+    for nombre, d in informe.items():
+        top = list(d["por_codigo"].items())[:6]
+        print(f"  {nombre:8}", ", ".join(f"{k} x{v}" for k, v in top))
+
+    destino = ruta_indice.parent / "informe_aipparel.json"
+    destino.write_text(json.dumps(informe, indent=1, ensure_ascii=False))
+    print("\n->", destino)
+
+
+if __name__ == "__main__":
+    main(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))
