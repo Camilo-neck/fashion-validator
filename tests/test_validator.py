@@ -657,3 +657,37 @@ def test_mensajes_sin_cifras_de_un_corpus(sano):
 
     for h in validar(sano):
         assert not re.search(r"\d\.\d{3}\b", h.mensaje), h.mensaje
+
+
+# --- una sola resolucion de la orientacion ----------------------------------
+
+def test_orientaciones_declarada_por_defecto_y_deducida(sano):
+    from hilvan.checks import orientaciones
+
+    pat = sano["pattern"]
+    origenes = {o for _, o in orientaciones(pat, Limites()).values()}
+    assert origenes == {"por_defecto"}
+
+    deducidas = orientaciones(pat, Limites(orientacion_por_defecto=None))
+    assert {o for _, o in deducidas.values()} == {"deducida"}
+    # en la camiseta la topologia elige lo mismo que el convenio de GarmentCode
+    assert {o for o, _ in deducidas.values()} == {"reversed"}
+
+    pat["stitches"][0][0]["orient"] = "direct"
+    assert orientaciones(pat, Limites())[0] == ("direct", "declarada")
+
+
+def test_nivel2_usa_la_orientacion_deducida(sano):
+    """Sin convenio por defecto el montaje deduce, y la camiseta sale igual."""
+    panels = sano["pattern"]["panels"]
+    lim = Limites(orientacion_por_defecto=None)
+    contornos = sorted(round(sum(longitud(panels[n], i) for n, i in b), 1)
+                       for b in bucles_libres(sano["pattern"], lim))
+    assert contornos == [42.1, 42.1, 70.1, 104.8]
+
+
+def test_cli_acepta_la_orientacion_deducida(capsys):
+    from hilvan.cli import main
+
+    main([str(FIXTURE), "--orientacion", "deducida"])
+    assert "deduce por topologia para el patron entero" in capsys.readouterr().out

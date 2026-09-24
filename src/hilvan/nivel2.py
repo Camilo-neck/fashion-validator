@@ -18,16 +18,19 @@ simetrica, el contorno cierra igual con cualquier convenio, las cadenas de
 esquina son coherentes con los dos, y la suma de 360 grados en una esquina
 interior no vale porque una falda con godets es conica a proposito.
 
-Asi que la orientacion se declara con `orient` en la costura. Sin declarar se
-usa `lim.orientacion_por_defecto`, que es el convenio observado en la salida de
-GarmentCode, y el montaje queda marcado como supuesto: entonces los contornos
-se informan pero no se juzga nada contra el cuerpo.
+Asi que la orientacion se declara con `orient` en la costura. Sin declarar la
+resuelve `checks.orientaciones`, el mismo criterio que el resto del validador:
+`lim.orientacion_por_defecto`, que es el convenio observado en la salida de
+GarmentCode, o si es None la que deduce la topologia para el patron entero. En
+los dos casos el montaje queda marcado como supuesto y sus veredictos bajan a
+aviso.
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
 
+from .checks import orientaciones
 from .geometry import longitud
 from .model import Cuerpo, Hallazgo, Limites
 
@@ -72,9 +75,11 @@ def _montaje(pattern: dict, lim: Limites):
             if len(extremos) == 2:
                 une(extremos[0], extremos[1])
 
-    # los dos bordes de una costura, extremo con extremo
+    # los dos bordes de una costura, extremo con extremo, con la orientacion
+    # que resuelve el mismo criterio que el resto del validador
+    resueltas = orientaciones(pattern, lim)
     declaradas = total = 0
-    for st in pattern.get("stitches", []):
+    for si, st in enumerate(pattern.get("stitches", [])):
         lados = [s for s in st if isinstance(s, dict)]
         if len(lados) != 2:
             continue
@@ -85,9 +90,9 @@ def _montaje(pattern: dict, lim: Limites):
         except (KeyError, IndexError, TypeError):
             continue
         total += 1
-        orient = next((l["orient"] for l in lados if l.get("orient") in PARES), None)
-        declaradas += orient is not None
-        a, b = PARES[orient or lim.orientacion_por_defecto]
+        orient, origen = resueltas[si]
+        declaradas += origen == "declarada"
+        a, b = PARES[orient]
         une((pn, en, 0), (qn, fn, a))
         une((pn, en, 1), (qn, fn, b))
 
@@ -165,9 +170,11 @@ def nivel2(pattern: dict, lim: Limites, cuerpo: Cuerpo | None = None) -> list[Ha
         out.append(Hallazgo(
             2, "montaje_supuesto", "aviso",
             f"{total - declaradas} de {total} costuras no declaran `orient`, asi que el "
-            f"montaje usa el convenio por defecto '{lim.orientacion_por_defecto}' "
-            f"(Limites.orientacion_por_defecto; ver 'Orientacion de la costura' en el "
-            f"README). Al no estar declarado, los veredictos bajan a aviso",
+            + (f"montaje usa el convenio por defecto '{lim.orientacion_por_defecto}' "
+               if lim.orientacion_por_defecto in PARES else
+               "montaje la deduce por topologia para el patron entero ")
+            + f"(Limites.orientacion_por_defecto; ver 'Orientacion de la costura' en el "
+              f"README). Al no estar declarado, los veredictos bajan a aviso",
             medido={"declaradas": declaradas, "costuras": total}))
 
     for bucle in bucles:

@@ -18,8 +18,7 @@ import numpy as np
 
 sys.path.insert(0, "src")
 from hilvan import DUROS, Limites, validar
-from hilvan.checks import PARES, _esquina
-from hilvan.geometry import angulos_interiores, segmento
+from hilvan.checks import PARES, _cruces_por_costura
 
 LIM = Limites()
 DESAJUSTE = ("desajuste_no_declarado", "fruncido_no_declarado")
@@ -44,31 +43,14 @@ def cruces_libres(pattern):
 
     Un borde libre solo puede continuar en otro borde libre, asi que la
     orientacion que case mas vecinos libres a traves de las costuras es la
-    fisicamente coherente. Es el mismo criterio que `checks._continuidad`.
+    fisicamente coherente. Usa el mismo recuento que el validador.
     """
-    panels = pattern["panels"]
     uso = {(s["panel"], s["edge"]) for st in pattern.get("stitches", [])
            for s in st if isinstance(s, dict)}
-    interiores = {n: angulos_interiores(p, [segmento(p, e) for e in p["edges"]])
-                  for n, p in panels.items()}
-    total = {"direct": 0, "reversed": 0}
-    for st in pattern.get("stitches", []):
-        lados = [s for s in st if isinstance(s, dict)]
-        if len(lados) != 2:
-            continue
-        try:
-            datos = [(l["panel"], l["edge"],
-                      panels[l["panel"]]["edges"][l["edge"]]["endpoints"]) for l in lados]
-            esq = [[_esquina(panels[n], interiores[n], v, i) for v in eps] for n, i, eps in datos]
-        except (KeyError, IndexError, TypeError):
-            continue
-        if any(e is None for par in esq for e in par):
-            continue
-        (nA, _, _), (nB, _, _) = datos
-        for nombre, par in PARES.items():
-            total[nombre] += sum(1 for ia, ib in par
-                                 if (nA, esq[0][ia][1]) not in uso
-                                 and (nB, esq[1][ib][1]) not in uso)
+    total = {o: 0 for o in PARES}
+    for _, _, _, cruces in _cruces_por_costura(pattern, uso):
+        for o in PARES:
+            total[o] += len(cruces[o])
     return total
 
 

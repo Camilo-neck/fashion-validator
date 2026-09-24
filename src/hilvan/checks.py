@@ -20,7 +20,7 @@ from .geometry import (a_complejo, segmento, longitud, radio_curvatura_min,
                        solapan, cruce_real, autocruce, ancho_minimo)
 from .model import Hallazgo, Limites
 
-__all__ = ["nivel0", "nivel1"]
+__all__ = ["nivel0", "nivel1", "orientaciones"]
 
 
 def _es_pico_de_pinza(edges: list[dict], panel: dict, i0: int, i1: int,
@@ -225,23 +225,14 @@ def _esquina(panel: dict, interiores: dict, v: int, idx: int):
     return interiores[v], vecino
 
 
-def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
-    """Continuidad del contorno libre en los cruces de costura.
+def _cruces_por_costura(pattern: dict, uso):
+    """Por cada costura, los cruces del contorno libre bajo cada orientacion.
 
-    En la prenda montada los dos paneles de una costura quedan a lado y lado.
-    Donde la costura termina, el contorno libre pasa del borde vecino de un
-    panel al del otro, y el angulo que recorre es la suma de los dos angulos
-    interiores: vale 180 grados cuando el escote sigue suave.
-
-    El formato de GarmentCode no dice que extremo de un borde se cose con cual
-    del otro, y no se puede deducir: la colocacion 3D del JSON es la posicion
-    inicial para el simulador y deja los paneles separados. La costura puede
-    declararlo con `orient`; sin declaracion se prueban los dos
-    emparejamientos, se elige el que mejor deja al patron y solo se reporta el
-    quiebre que ninguno explica. Cada hallazgo dice de cual de los dos casos
-    viene, porque el deducido es una cota inferior y el declarado no.
+    Devuelve (indice, orient declarada o None, datos de los dos lados,
+    {"direct": cruces, "reversed": cruces}). Cada cruce es (desviacion, vecino
+    en A, vecino en B, angulo en A, angulo en B). Las costuras rotas o con
+    contorno abierto no aparecen: ya las reporta el resto de los niveles 0 y 1.
     """
-    out: list[Hallazgo] = []
     panels = pattern["panels"]
     cache: dict[str, dict] = {}
 
@@ -255,16 +246,7 @@ def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
         lados = [s for s in st if isinstance(s, dict)]
         if len(lados) != 2:
             continue
-
         orient = next((l["orient"] for l in lados if l.get("orient") is not None), None)
-        if orient is not None and orient not in PARES:
-            out.append(Hallazgo(
-                1, "orientacion_incongruente", "error",
-                f"declara la orientacion '{orient}', que no es "
-                f"{' ni '.join(PARES)}",
-                costura=si, medido={"orient": orient}))
-            orient = None
-
         try:
             datos = [(l["panel"], panels[l["panel"]], l["edge"],
                       panels[l["panel"]]["edges"][l["edge"]]["endpoints"])
@@ -272,11 +254,10 @@ def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
             esquinas = [[_esquina(p, interiores(n), v, i) for v in eps]
                         for n, p, i, eps in datos]
         except (KeyError, IndexError, TypeError):
-            continue  # referencia rota: ya lo reporta el resto del nivel 1
+            continue
         if any(e is None for par in esquinas for e in par):
             continue
-
-        (nA, pA, _, _), (nB, pB, _, _) = datos
+        nA, nB = datos[0][0], datos[1][0]
 
         def evaluar(par):
             res = []
@@ -290,9 +271,93 @@ def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
                 res.append((abs(angA + angB - 180.0), vecA, vecB, angA, angB))
             return res
 
+        yield si, orient, datos, {o: evaluar(par) for o, par in PARES.items()}
+
+
+def _deducir(cruces: dict) -> str:
+    """La orientacion que la topologia prefiere.
+
+    Un borde libre solo puede continuar en otro borde libre, asi que gana la que
+    case mas vecinos libres; a igualdad, la que menos quiebre deje. Es el
+    emparejamiento mas favorable al patron.
+    """
+    return min(PARES, key=lambda o: (-len(cruces[o]), sum(x[0] for x in cruces[o])))
+
+
+def orientaciones(pattern: dict, lim: Limites) -> dict[int, tuple[str, str]]:
+    """Como se empareja cada costura: {indice: (orientacion, origen)}.
+
+    El orden es el mismo para todo el validador: la que la costura declara con
+    `orient`; si no declara, `lim.orientacion_por_defecto`; y si ese convenio es
+    None, la que deduce la topologia para el patron entero: la orientacion que
+    case mas bordes libres sumando todas las costuras, con empate a 'reversed'.
+    Es el criterio con el que se midio el convenio sobre GarmentCodeData.
+    `origen` es 'declarada', 'por_defecto' o 'deducida'.
+
+    La deduccion es global y no costura a costura a proposito: en una costura
+    suelta los dos emparejamientos empatan a menudo, y desempatar por el menor
+    quiebre (lo que hace la continuidad) llega a fusionar aberturas distintas;
+    en la camiseta de prueba junta escote y bajo en dos bucles de 87 cm.
+    """
+    uso = {(s["panel"], s["edge"]) for st in pattern.get("stitches", [])
+           for s in st if isinstance(s, dict)}
+    deducida = "reversed"
+    if lim.orientacion_por_defecto not in PARES:
+        total = {o: 0 for o in PARES}
+        for _, _, _, cruces in _cruces_por_costura(pattern, uso):
+            for o in PARES:
+                total[o] += len(cruces[o])
+        if total["direct"] > total["reversed"]:
+            deducida = "direct"
+
+    out = {}
+    for si, st in enumerate(pattern.get("stitches", [])):
+        lados = [s for s in st if isinstance(s, dict)]
+        orient = next((l.get("orient") for l in lados if l.get("orient") in PARES), None)
         if orient is not None:
+            out[si] = (orient, "declarada")
+        elif lim.orientacion_por_defecto in PARES:
+            out[si] = (lim.orientacion_por_defecto, "por_defecto")
+        else:
+            out[si] = (deducida, "deducida")
+    return out
+
+
+def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
+    """Continuidad del contorno libre en los cruces de costura.
+
+    En la prenda montada los dos paneles de una costura quedan a lado y lado.
+    Donde la costura termina, el contorno libre pasa del borde vecino de un
+    panel al del otro, y el angulo que recorre es la suma de los dos angulos
+    interiores: vale 180 grados cuando el escote sigue suave.
+
+    El formato de GarmentCode no dice que extremo de un borde se cose con cual
+    del otro, y no se puede deducir de la colocacion 3D. Una costura que declara
+    `orient` se evalua con ella. Una que no declara se evalua siempre con el
+    emparejamiento que deduce la topologia (_deducir), aunque haya un convenio
+    por defecto: es el mas favorable al patron, asi que el hallazgo queda como
+    cota inferior y no depende de un supuesto. El nivel 2 no puede hacer lo
+    mismo, porque necesita un montaje unico de la prenda entera, y usa
+    `orientaciones()`. Cada hallazgo dice si su emparejamiento fue declarado o
+    deducido.
+    """
+    out: list[Hallazgo] = []
+
+    for si, st in enumerate(pattern.get("stitches", [])):
+        lados = [s for s in st if isinstance(s, dict)]
+        orient = next((l["orient"] for l in lados if l.get("orient") is not None), None)
+        if len(lados) == 2 and orient is not None and orient not in PARES:
+            out.append(Hallazgo(
+                1, "orientacion_incongruente", "error",
+                f"declara la orientacion '{orient}', que no es "
+                f"{' ni '.join(PARES)}",
+                costura=si, medido={"orient": orient}))
+
+    for si, orient, datos, cruces in _cruces_por_costura(pattern, uso):
+        (nA, pA, _, _), (nB, pB, _, _) = datos
+        if orient in PARES:
             otro = "reversed" if orient == "direct" else "direct"
-            mejor, alterna = evaluar(PARES[orient]), evaluar(PARES[otro])
+            mejor, alterna = cruces[orient], cruces[otro]
             # un borde libre solo puede continuar en otro borde libre: si la
             # otra orientacion encaja mas, la declarada contradice la topologia
             if len(alterna) > len(mejor):
@@ -304,11 +369,8 @@ def _continuidad(pattern: dict, uso: dict, lim: Limites) -> list[Hallazgo]:
                     costura=si, medido={"declarada": orient, "cruces_declarada": len(mejor),
                                         "alternativa": otro, "cruces_alternativa": len(alterna)}))
         else:
-            # un borde libre solo puede continuar en otro borde libre, asi que
-            # el emparejamiento que case mas vecinos libres es el fisicamente
-            # coherente; a igualdad, el que menos quiebre deje
-            mejor = min((evaluar(PARES["direct"]), evaluar(PARES["reversed"])),
-                        key=lambda r: (-len(r), sum(x[0] for x in r)))
+            orient = None
+            mejor = cruces[_deducir(cruces)]
 
         for desv, vecA, vecB, angA, angB in mejor:
             if desv <= lim.angulo_max_quiebre:

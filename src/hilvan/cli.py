@@ -74,7 +74,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--angulo-min", type=float, default=None,
                     help="angulo minimo cosible en grados (por defecto 15)")
     ap.add_argument("--sin-pinzas", action="store_true",
-                    help="no reconocer picos de pinza: toda esquina aguda es error")
+                    help="no reconocer picos de pinza: se reportan como muesca_aguda")
+    ap.add_argument("--orientacion", choices=["direct", "reversed", "deducida"],
+                    default=None,
+                    help="emparejamiento de las costuras que no declaran `orient` "
+                         "(por defecto 'reversed', el convenio de GarmentCode; "
+                         "'deducida' lo decide la topologia para el patron entero, "
+                         "para patrones de otros generadores)")
     args = ap.parse_args(argv)
 
     lim = Limites()
@@ -84,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         lim.angulo_min_esquina = args.angulo_min
     if args.sin_pinzas:
         lim.permitir_pinzas = False
+    if args.orientacion is not None:
+        lim.orientacion_por_defecto = None if args.orientacion == "deducida" else args.orientacion
 
     if args.lote:
         return _lote(args, lim)

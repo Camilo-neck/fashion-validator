@@ -286,6 +286,14 @@ y `direct` en 4. Sobre los 3.450 patrones del corpus, `reversed` gana en 3.310,
 empata en 140 y pierde en ninguno, con una mediana de 8 cruces de ventaja: por
 eso es el convenio por defecto cuando la costura no declara nada.
 
+Para patrones de otro generador ese convenio no está garantizado:
+`hilvan patron.json --orientacion deducida` (o
+`Limites(orientacion_por_defecto=None)`) lo decide la topología para el patrón
+entero, sumando los cruces de todas sus costuras. La continuidad siempre evalúa
+las costuras sin declarar con el emparejamiento más favorable, para que su aviso
+sea una cota inferior; el montaje del nivel 2 necesita una sola orientación
+coherente y usa el convenio o la deducción global.
+
 ## Comprobaciones
 
 ### Nivel 0 — geometría de cada panel

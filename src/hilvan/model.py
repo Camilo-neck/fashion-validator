@@ -50,8 +50,10 @@ class Limites:
     # de GarmentCode: verificado sobre sus dos prendas de referencia, donde
     # 'reversed' produce las aberturas que la prenda tiene de verdad y 'direct'
     # las fusiona. No es una garantia del formato, por eso es configurable y la
-    # declaracion por costura manda sobre esto.
-    orientacion_por_defecto: str = "reversed"
+    # declaracion por costura manda sobre esto. None deduce la orientacion por
+    # topologia para el patron entero (la que case mas bordes libres), para
+    # patrones que no vienen de GarmentCode.
+    orientacion_por_defecto: str | None = "reversed"
 
     # Distancia bajo la cual un cruce se considera ocurrido en el vertice comun.
     eps_vertice: float = 0.05         # cm
