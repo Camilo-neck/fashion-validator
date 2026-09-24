@@ -33,8 +33,9 @@ que falla y una vara imposible de superar.
 | AIpparel, desde texto | **0,0%** | 17,0% | 21,2 |
 | Corpus (ground truth) | 12,0% | 78,0% | 5,8 |
 
-Ninguno de los 200 patrones generados es manufacturable. Con 0 de 200, el
-intervalo de confianza del 95% llega hasta el 1,5%: aunque la corrida hubiera
+Ninguno de los 200 patrones generados es manufacturable. Con 0 de 200, la
+cota superior exacta unilateral del 95% (Clopper-Pearson) es 1,49%, y el
+intervalo bilateral del 95% llega hasta el 1,83%: aunque la corrida hubiera
 tenido suerte en contra, la tasa real no puede ser alta.
 
 «Defecto duro» son los que dependen solo de la geometría del panel y no de una

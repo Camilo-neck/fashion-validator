@@ -71,11 +71,16 @@ dependería del umbral elegido y no de la prenda. No es el caso:
 
 | Hallazgo | Umbral | Mediana | p10 | Mínimo |
 | --- | ---: | ---: | ---: | ---: |
-| `esquina_aguda` | 15° | 11,5° | 4,3° | 0,16° |
-| `borde_degenerado` | 0,5 cm | 0,25 cm | 0,07 cm | 0,024 cm |
-| `desajuste_no_declarado` | 1% | 5,9% | 1,8% | 1,0% |
+| `esquina_aguda` | 15° | 11,2° | 4,5° | 0,12° |
+| `borde_degenerado` | 0,5 cm | 0,15 cm | 0,075 cm | 0,018 cm |
+| `desajuste_no_declarado` | 1% | 5,6% | 1,7% | 1,0% |
 
-La salvedad honesta: el p90 de `esquina_aguda` es 14,9°, así que en torno a un
+Una fila por hallazgo, recalculada con `research/numeros_paper.py` el 24 de
+septiembre de 2026. La versión anterior de esta tabla (mediana de borde 0,25 cm,
+mínimo de esquina 0,16°) no salía de ningún script versionado y no se pudo
+reproducir con el validador actual; estos son los valores que sí se reproducen.
+
+La salvedad: el p90 de `esquina_aguda` es 14,7°, así que en torno a un
 10% de esas esquinas desaparecería bajando el umbral un grado. Las medianas no.
 
 ## Filtrar el corpus, como lo proponía el roadmap, lo estropea
@@ -115,7 +120,7 @@ puro efecto de acumulación de un filtro binario sobre un patrón entero.
 
 Un detalle que conviene no pasar por alto: los defectos **no son independientes
 entre costuras**. Con 30 costuras y 0,209 errores por costura, la independencia
-predice un 0,4% de patrones limpios y se observa un 8,5%, veinte veces más. Hay
+predice un 0,4% de patrones limpios (0,36%, con la mediana de 24 costuras del tramo 20–30) y se observa un 8,5%, unas 24 veces más. Hay
 patrones sistemáticamente buenos y otros sistemáticamente malos, así que sí
 existe señal de calidad por patrón — pero el filtro binario la confunde con el
 tamaño.
@@ -131,7 +136,7 @@ tamaño.
 | **Sin defecto geométrico** | **79,6%** | **58,2%** | 26,2% | 15,6% |
 
 El filtro correcto es el último: descartar solo los patrones con un defecto
-geométrico duro. Conserva cuatro veces más datos que el filtro binario y deja la
+geométrico duro. Conserva más de siete veces más datos que el filtro binario (2.745 contra 362) y deja la
 composición de la prenda casi intacta — 60,3% de cuerpo entero pasa a 58,2%,
 frente al 31,5% que deja el filtro propuesto.
 
@@ -159,6 +164,8 @@ Un agregado puede esconder el efecto si los dos lotes tienen diseños distintos,
 así que la comparación se hizo **pareada** sobre los 2.953 diseños presentes en
 ambos, que aísla el cuerpo dejando el diseño fijo:
 
+«Roto» aquí significa con defecto geométrico duro.
+
 | Mismo diseño | Casos |
 | --- | ---: |
 | Limpio en los dos | 2.248 |
@@ -166,14 +173,18 @@ ambos, que aísla el cuerpo dejando el diseño fijo:
 | Roto solo en cuerpo neutro | 142 |
 | Roto en los dos | 424 |
 
-Los discordantes se reparten 139 contra 142. McNemar exacto da **p = 0,91**: no
-hay ninguna asimetría, ni siquiera pequeña. La media de defectos de más en
+Los discordantes se reparten 139 contra 142. McNemar exacto da **p = 0,91**, y la
+diferencia pareada (aleatorio menos neutro) es de −0,1 puntos con un IC95 de
+[−1,2; 1,0]: no hay asimetría detectable, y la que los datos admiten es pequeña. La media de defectos de más en
 cuerpo aleatorio es −0,050 por diseño, es decir, ligeramente a favor del cuerpo
 aleatorio.
 
-**Los defectos son propiedad del diseño, no del ajuste.** De los 705 diseños
-rotos en al menos un cuerpo, 424 lo están en los dos: un 60% de concordancia que
-no aparecería si el cuerpo fuera la causa.
+**Los defectos son propiedad del diseño, no del ajuste.** Las tasas marginales en los diseños
+pareados son 19,2% (neutro) y 19,1% (aleatorio). Si fuera el cuerpo el que
+decide qué diseño se rompe, los dos resultados serían casi independientes y un
+diseño saldría roto en ambos unas 108 veces. Sale roto en ambos 424 veces, 3,9
+veces más. (Que 139 + 142 + 424 sume 705, igual que los patrones con defecto
+duro del cuerpo neutro, es coincidencia: son conjuntos distintos.)
 
 Tiene dos consecuencias prácticas. Para sanear el corpus no hace falta ponderar
 por tipo de cuerpo. Y para atribuir la culpa, los defectos vienen del programa

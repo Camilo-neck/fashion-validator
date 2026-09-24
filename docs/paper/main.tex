@@ -437,7 +437,13 @@ only the specification files: 5.12\,GB transferred, 96\,MB written. This yields
 of which 2{,}953 designs appear in both.
 
 These are \emph{published} patterns: they passed GarmentCode's own checks and
-survived physical simulation in the authors' pipeline. The sample is therefore
+survived physical simulation in the authors' pipeline. We verified the second
+point against the batch's own records. Its metadata lists 1{,}551 designs whose
+neutral-body simulation failed and 1{,}693 whose randomized-body simulation
+failed, and none of them is among the specifications in the archive we
+measured.
+% research/fallos_simulacion.py, sobre dataset_properties_{default,random}_body.yaml
+The sample is therefore
 cleaner than one drawn by sampling the parameter space directly, where we
 measured only 30\% of 60 random designs producing a pattern the generator
 itself accepts.
@@ -460,7 +466,7 @@ memory; memory-mapping the file instead keeps the resident set under 1.5\,GiB
 and makes the run fit.
 
 \paragraph{Reproducibility.} All measurements run on CPU with fixed thresholds;
-the validator, its 40-case test suite, the sweep tool and the scripts that
+the validator, its 41-case test suite, the sweep tool and the scripts that
 generate the figures in this paper from the corpus are released together, as
 are the four scripts behind the generator experiment.
 
@@ -487,6 +493,7 @@ Separated, one in five published patterns carries a hard geometric defect.
 \toprule
 & Patterns & \% \\
 \midrule
+% research/numeros_paper.py -> figs/numeros_texto.json
 Hard geometric defect & 705 & \textbf{20.4} \\
 Only undeclared intent & 2{,}383 & 69.1 \\
 Fully validated & 362 & 10.5 \\
@@ -509,10 +516,12 @@ Edge below cuttable length & 501 & 1{,}921 \\
 Corner too sharp to sew & 234 & 836 \\
 Exceeds fabric roll width & 4 & 8 \\
 Self-intersection & 3 & 6 \\
+Curve too tight to sew & 0 & 0 \\
 \bottomrule
 \end{tabular}
-\caption{Hard geometric defects by class. The shortest edge in the batch
-measures $0.018$\,cm.}
+\caption{Hard geometric defects by class, neutral-body corpus. A pattern may
+exhibit several classes, so the rows sum to more than the 705 patterns with a
+hard defect. The shortest edge in the batch measures $0.018$\,cm.}
 \label{tab:defects}
 \end{table}
 
@@ -520,25 +529,30 @@ measures $0.018$\,cm.}
 
 If the reported values clustered just below their limits, the result would be a
 property of our thresholds rather than of the garments. Table~\ref{tab:margins}
-shows they do not: medians sit at roughly half the limit, and the extremes are
-orders of magnitude beyond it. The honest caveat is that the 90th percentile of
-sharp corners is $14.9^\circ$, so around a tenth of those would disappear if
-the limit were lowered by one degree. The medians would not.
+shows that for two of the three classes they do not. The median short edge is
+0.15\,cm, under a third of the limit, and the median undeclared mismatch is
+5.6\%, over five times the tolerance. Sharp corners sit closer: their median is
+$11.2^\circ$ against a limit of $15^\circ$, and their 90th percentile is
+$14.7^\circ$, so around a tenth of them would disappear if the limit were
+lowered by one degree.
 
 \begin{table}[h]
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
+% research/numeros_paper.py: una fila por hallazgo, cuerpo neutro
 \begin{tabular}{lrrrr}
 \toprule
 Finding & Limit & Median & p10 & Min \\
 \midrule
-Sharp corner & $15^\circ$ & $11.5^\circ$ & $4.3^\circ$ & $0.16^\circ$ \\
-Short edge & $0.5$\,cm & $0.25$\,cm & $0.07$\,cm & $0.024$\,cm \\
-Seam mismatch & $1\%$ & $5.9\%$ & $1.8\%$ & $1.0\%$ \\
+Sharp corner & $15^\circ$ & $11.2^\circ$ & $4.5^\circ$ & $0.12^\circ$ \\
+Short edge & $0.5$\,cm & $0.15$\,cm & $0.075$\,cm & $0.018$\,cm \\
+Seam mismatch & $1\%$ & $5.6\%$ & $1.7\%$ & $1.0\%$ \\
 \bottomrule
 \end{tabular}
-\caption{Distance between reported values and the threshold that reports them.}
+\caption{Reported values against the threshold that reports them, over all
+findings of each class in the neutral-body corpus (836 corners, 1{,}921 edges,
+17{,}496 mismatches in the 1--15\% error zone).}
 \label{tab:margins}
 \end{table}
 
@@ -570,18 +584,27 @@ But the decline with size is an accumulation artefact, not a quality gradient.}
 \label{fig:accum}
 \end{figure}
 
-The gap between the two curves is itself informative. If defects were
-independent, a thirty-seam garment at $0.209$ errors per seam would be clean
-$0.4\%$ of the time; it is clean $8.5\%$ of the time, twenty times more often.
-Some patterns are systematically good and others systematically bad, so a
-per-pattern quality signal is real --- the binary filter simply confounds it
-with size.
+The gap between the two curves is itself informative. The dashed curve is a
+null model in which each seam of a pattern fails independently with probability
+equal to its bin's per-seam error rate, evaluated at the bin's median seam
+count $m$: the expected fully validated rate is $(1 - r)^m$. Garments with
+20--30 seams have $r = 0.209$ and $m = 24$, so the null model predicts 0.36\%
+fully validated; the observed rate is 8.5\%, about 24 times higher. The model
+is an approximation, since $r$ counts errors, including panel-level ones,
+rather than failed seams, and a seam carries at most one mismatch. Its
+qualitative verdict is robust to that: some patterns are systematically good
+and others systematically bad, so a per-pattern quality signal exists, and the
+binary filter confounds it with size.
+% research/figuras_paper.py, figura_acumulacion: pred = (1 - r)^mediana
 
 Figure~\ref{fig:filters} compares filtering criteria by what they do to the
 garment-type composition of the corpus. Discarding only hard geometric defects
 retains 79.6\% of the data and leaves the composition nearly intact (full-body
 garments 60.3\%\,$\rightarrow$\,58.2\%), whereas the zero-error filter retains
-10.5\% and halves the full-body share to 31.5\%. The reason is the same one
+10.5\% and halves the full-body share to 31.5\%. Rate-based filters fall in
+between: keeping patterns with at most 0.10 errors per seam retains 25.8\% of
+the corpus with 48.1\% full-body garments, and a limit of 0.05 retains 13.2\%
+with 37.5\%. The reason is the same one
 that made the 89.5\% headline misleading: undeclared mismatches are format
 ambiguity, not defects, and using them as a discard criterion is what destroys
 the corpus.
@@ -610,12 +633,21 @@ the design fixed and varies only the body. Here a design counts as defective
 if it carries a hard geometric defect. Of the 2{,}953 designs, 2{,}248 are
 hard-defect-free on both bodies and 424 defective on both; the discordant cases
 split 139 (defective only on the randomized body) against 142 (only on the
-neutral body). An exact McNemar
-test gives $p = 0.91$: no asymmetry of any size.
+neutral body). An exact McNemar test gives $p = 0.91$, and the paired
+difference in defect rate (randomized minus neutral) is $-0.1$ percentage
+points with a 95\% confidence interval of $[-1.2, 1.0]$: no detectable
+asymmetry, and any effect the data allow is small.
+% research/numeros_paper.py, pareado(): IC de Wald para la diferencia pareada
+% Los 705 = 139 + 142 + 424 disenos pareados coinciden por azar con los 705
+% patrones con defecto duro del cuerpo neutro completo: de estos, 566 estan en
+% el conjunto pareado y 139 no.
 
-The accompanying positive result is the useful one. Of the 705 designs
-defective on at least one body, 424 are defective on both --- 60\% concordance,
-which would not arise if the body were the cause. \textbf{The defects belong to
+The accompanying positive result is the useful one. The marginal defect rates
+on the paired designs are 19.2\% (neutral) and 19.1\% (randomized). If the body
+determined which designs failed, the two outcomes would be close to
+independent, and a design would be defective on both bodies $2{,}953 \times
+0.192 \times 0.191 \approx 108$ times. It is defective on both 424 times, 3.9
+times as often. \textbf{The defects belong to
 the parametric design, not to the fit}, which makes them reproducible and
 fixable at source, and means corpus sanitization need not weight by body type.
 
@@ -663,13 +695,20 @@ with no declared ease, including those above the 15\% gather threshold.}
 Image conditioning yields 23\% hard-defect-free patterns and text
 conditioning 17\%, against 78\% for the corpus patterns the model was asked to
 reproduce. Full validation is stricter still: none of the 200 generated
-patterns passes it, against 12 of the 100 corpus patterns.
+patterns passes it, against 12 of the 100 corpus patterns. With zero successes
+in 200 trials, the exact one-sided 95\% upper bound (Clopper--Pearson) on the
+generated fully validated rate is 1.5\%, and the two-sided 95\% interval
+reaches 1.8\%.
 
 The headline is less informative than the mechanism. A count of errors per
 pattern rewards whichever model emits fewer seams, so it cannot be compared
 across groups; the per-seam rate can. AIpparel produces patterns of
 \emph{the same complexity} as the corpus --- 31.6 seams against 31.5 --- and
-fails at 88\% of them, against 33\% for the corpus. The model does not sew less;
+fails at 88\% of them, against 33\% for the corpus.
+\todo{Magnitude of the mismatch per seam (median, p25, p75 and fraction above
+15\%) for the three groups. Needs AIpparel's 200 inference outputs, which are
+not on disk; with them, extend research/aipparel\_contraste.py.}
+The model does not sew less;
 it sews worse. This is legible in the architecture: the two edges of a seam are
 emitted as independent vertex predictions and nothing in the representation
 couples their lengths. That a pattern \emph{depicts} the requested garment and
@@ -800,7 +839,8 @@ a metric can drive out and a reconstruction loss cannot see.
 Two findings should change how such a tool is used. Filtering a training corpus
 on ``no errors'' is worse than not filtering, because it selects for small
 garments rather than good ones; filtering on hard geometric defects retains
-four times the data and leaves the distribution intact. And the defects are a
+more than seven times the data and leaves the distribution intact.
+ And the defects are a
 property of the design program rather than of made-to-measure fitting, which
 means they are reproducible, attributable, and fixable where they are
 introduced.

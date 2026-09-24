@@ -1,6 +1,18 @@
 {
  "neutro": {
   "patrones": 3450,
+  "medianas_validados": {
+   "paneles": 6.0,
+   "costuras": 14.0,
+   "bordes": 42.0,
+   "pct_curvos": 25.0
+  },
+  "medianas_rechazados": {
+   "paneles": 10.0,
+   "costuras": 30.0,
+   "bordes": 72.0,
+   "pct_curvos": 25.0
+  },
   "con_defecto_duro": 705,
   "pct_defecto_duro": 20.43,
   "solo_intencion": 2383,
@@ -70,6 +82,18 @@
  },
  "aleatorio": {
   "patrones": 3307,
+  "medianas_validados": {
+   "paneles": 6.0,
+   "costuras": 12.0,
+   "bordes": 38.0,
+   "pct_curvos": 25.0
+  },
+  "medianas_rechazados": {
+   "paneles": 10.0,
+   "costuras": 30.0,
+   "bordes": 73.5,
+   "pct_curvos": 24.2
+  },
   "con_defecto_duro": 701,
   "pct_defecto_duro": 21.2,
   "solo_intencion": 2273,

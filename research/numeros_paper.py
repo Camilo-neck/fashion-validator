@@ -74,6 +74,10 @@ def medir(carpeta, orientacion=False):
             "aberturas": [h.medido["contorno_cm"] for h in hs
                           if h.nivel == 2 and h.codigo == "abertura"],
             "montaje_incoherente": any(h.codigo == "montaje_incoherente" for h in hs),
+            "paneles": len(pat["panels"]),
+            "bordes": sum(len(p["edges"]) for p in pat["panels"].values()),
+            "curvos": sum(1 for p in pat["panels"].values() for e in p["edges"]
+                          if e.get("curvature")),
         }
         if orientacion:
             fila["orient"] = cruces_libres(pat)
@@ -109,8 +113,16 @@ def resumen(filas):
     todos = lambda campo: [x for f in filas.values() for x in f[campo]]
     cortos, esquinas, desaj = todos("bordes_cortos"), todos("esquinas"), todos("desajustes")
     desaj_err = [x for x in desaj if x <= LIM.umbral_fruncido]
+    rech = [f for f in filas.values() if f["errores"]]
+    limp = [f for f in filas.values() if not f["errores"]]
+    medianas = lambda g: {
+        "paneles": float(np.median([f["paneles"] for f in g])),
+        "costuras": float(np.median([f["costuras"] for f in g])),
+        "bordes": float(np.median([f["bordes"] for f in g])),
+        "pct_curvos": round(100 * float(np.median([f["curvos"] / f["bordes"] for f in g])), 1)}
     return {
         "patrones": n,
+        "medianas_validados": medianas(limp), "medianas_rechazados": medianas(rech),
         "con_defecto_duro": len(duro), "pct_defecto_duro": pct(len(duro), n),
         "solo_intencion": n - len(duro) - len(limpio),
         "pct_solo_intencion": pct(n - len(duro) - len(limpio), n),
