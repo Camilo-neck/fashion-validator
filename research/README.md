@@ -35,6 +35,20 @@ Warp) no se usa aquí.
 | `run_batch.py` | ¿Qué encuentra el validador en patrones que GarmentCode aprueba? |
 | `inspect_case.py` | Aísla casos de un código concreto para revisarlos a mano |
 | `check_arc_fp.py` | Contrasta intersecciones de arcos exactas contra linealizadas |
+| `sanear_corpus.py` | Mide GarmentCodeData entero sobre el flujo, sin bajarlo a disco |
+
+`sanear_corpus.py` es el único que no necesita GarmentCode ni nada local: los 36
+lotes del corpus son ~170 GB comprimidos, así que cada uno se descomprime en
+memoria, se valida prenda a prenda y se tira. Lo que queda en disco es un JSONL
+por lote con el veredicto, unos 25 MB en total. Se puede cortar y retomar: un
+lote a medias se queda en `.part` y se reintenta entero.
+
+```bash
+python sanear_corpus.py /ruta/destino          # los 36 lotes, ~3,3 h de descarga
+python sanear_corpus.py /ruta/destino 0-5      # solo algunos
+python sanear_corpus.py /ruta/destino --resumen
+```
+
 
 Los `aipparel_*` no usan GarmentCode sino el repositorio de AIpparel y su
 checkpoint, y son los que produjeron `docs/hallazgos-aipparel.md`:
