@@ -1,7 +1,10 @@
-% ATENCION: los datos bibliograficos de abajo se escribieron de memoria y
-% NO estan verificados contra las paginas oficiales. Antes de enviar a
-% cualquier sitio hay que confirmar autores, ano, venue, volumen y paginas
-% de cada entrada (DBLP o la pagina del proyecto son suficientes).
+% Every entry below was checked on 24 September 2026 against a primary source:
+% CVF Open Access BibTeX (CVPR/ICCV), Crossref metadata by DOI (ACM TOG,
+% Springer LNCS, IJCAI, NeurIPS), PMLR page metadata (ICML), the ICLR
+% proceedings, arXiv (authors of preprints), Open Library / publisher pages
+% (books) and the GitHub API (repositories and issues).
+
+% --- Pattern representation and datasets ---------------------------------
 
 @article{garmentcode,
   author  = {Korosteleva, Maria and Sorkine-Hornung, Olga},
@@ -9,70 +12,300 @@
   journal = {ACM Transactions on Graphics},
   volume  = {42},
   number  = {6},
+  pages   = {1--15},
   year    = {2023},
-  note    = {SIGGRAPH Asia 2023},
-  url     = {https://github.com/maria-korosteleva/GarmentCode}
+  doi     = {10.1145/3618351}
 }
 
 @inproceedings{gcdata,
   author    = {Korosteleva, Maria and Kesdogan, Timur Levent and Kemper, Fabian
                and Wenninger, Stephan and Koller, Jasmin and Zhang, Yuhan
                and Botsch, Mario and Sorkine-Hornung, Olga},
-  title     = {{GarmentCodeData}: A Dataset of 3D Made-to-Measure Garments
+  title     = {{GarmentCodeData}: A Dataset of {3D} Made-to-Measure Garments
                with Sewing Patterns},
-  booktitle = {European Conference on Computer Vision (ECCV)},
-  year      = {2024}
+  booktitle = {Computer Vision -- ECCV 2024},
+  series    = {Lecture Notes in Computer Science},
+  publisher = {Springer},
+  pages     = {110--127},
+  year      = {2024},
+  doi       = {10.1007/978-3-031-73027-6_7}
+}
+
+@inproceedings{korosteleva2021,
+  author    = {Korosteleva, Maria and Lee, Sung-Hee},
+  title     = {Generating Datasets of {3D} Garments with Sewing Patterns},
+  booktitle = {Proceedings of the Neural Information Processing Systems Track
+               on Datasets and Benchmarks},
+  volume    = {1},
+  year      = {2021}
+}
+
+@article{berthouzoz2013,
+  author  = {Berthouzoz, Floraine and Garg, Akash and Kaufman, Danny M. and
+             Grinspun, Eitan and Agrawala, Maneesh},
+  title   = {Parsing Sewing Patterns into {3D} Garments},
+  journal = {ACM Transactions on Graphics},
+  volume  = {32},
+  number  = {4},
+  pages   = {1--12},
+  year    = {2013},
+  doi     = {10.1145/2461912.2461975}
+}
+
+@article{sensitivecouture,
+  author  = {Umetani, Nobuyuki and Kaufman, Danny M. and Igarashi, Takeo and
+             Grinspun, Eitan},
+  title   = {Sensitive Couture for Interactive Garment Modeling and Editing},
+  journal = {ACM Transactions on Graphics},
+  volume  = {30},
+  number  = {4},
+  pages   = {1--12},
+  year    = {2011},
+  doi     = {10.1145/2010324.1964985}
+}
+
+@misc{textileir,
+  author        = {Teikari, Petteri and Fuenmayor, Neliana},
+  title         = {Textile {IR}: A Bidirectional Intermediate Representation
+                   for Physics-Aware Fashion {CAD}},
+  year          = {2026},
+  eprint        = {2601.02792},
+  archivePrefix = {arXiv},
+  howpublished  = {arXiv:2601.02792}
+}
+
+% --- Generative and reconstruction models for sewing patterns --------------
+
+@article{neuraltailor,
+  author  = {Korosteleva, Maria and Lee, Sung-Hee},
+  title   = {{NeuralTailor}: Reconstructing Sewing Pattern Structures from
+             {3D} Point Clouds of Garments},
+  journal = {ACM Transactions on Graphics},
+  volume  = {41},
+  number  = {4},
+  pages   = {1--16},
+  year    = {2022},
+  doi     = {10.1145/3528223.3530179}
+}
+
+@article{sewformer,
+  author  = {Liu, Lijuan and Xu, Xiangyu and Lin, Zhijie and Liang, Jiabin and
+             Yan, Shuicheng},
+  title   = {Towards Garment Sewing Pattern Reconstruction from a Single Image},
+  journal = {ACM Transactions on Graphics},
+  volume  = {42},
+  number  = {6},
+  pages   = {1--15},
+  year    = {2023},
+  doi     = {10.1145/3618319}
+}
+
+@inproceedings{panelformer,
+  author    = {Chen, Cheng-Hsiu and Su, Jheng-Wei and Hu, Min-Chun and
+               Yao, Chih-Yuan and Chu, Hung-Kuo},
+  title     = {Panelformer: Sewing Pattern Reconstruction from {2D} Garment
+               Images},
+  booktitle = {IEEE/CVF Winter Conference on Applications of Computer Vision
+               (WACV)},
+  pages     = {443--452},
+  year      = {2024},
+  doi       = {10.1109/WACV57701.2024.00051}
+}
+
+@article{dresscode,
+  author  = {He, Kai and Yao, Kaixin and Zhang, Qixuan and Yu, Jingyi and
+             Liu, Lingjie and Xu, Lan},
+  title   = {{DressCode}: Autoregressively Sewing and Generating Garments from
+             Text Guidance},
+  journal = {ACM Transactions on Graphics},
+  volume  = {43},
+  number  = {4},
+  pages   = {1--13},
+  year    = {2024},
+  doi     = {10.1145/3658147}
 }
 
 @inproceedings{chatgarment,
-  author    = {Bian, Siyuan and others},
-  title     = {{ChatGarment}: Garment Estimation, Generation and Editing
-               via Large Language Models},
-  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition
-               (CVPR)},
-  year      = {2025},
-  note      = {Verificar: preprint arXiv 2024}
+  author    = {Bian, Siyuan and Xu, Chenghao and Xiu, Yuliang and Grigorev,
+               Artur and Liu, Zhen and Lu, Cewu and Black, Michael J. and
+               Feng, Yao},
+  title     = {{ChatGarment}: Garment Estimation, Generation and Editing via
+               Large Language Models},
+  booktitle = {Proceedings of the Computer Vision and Pattern Recognition
+               Conference (CVPR)},
+  pages     = {2924--2934},
+  year      = {2025}
 }
 
 @inproceedings{aipparel,
-  author    = {Nakayama, Kiyohiro and others},
+  author    = {Nakayama, Kiyohiro and Ackermann, Jan and Kesdogan, Timur Levent
+               and Zheng, Yang and Korosteleva, Maria and Sorkine-Hornung, Olga
+               and Guibas, Leonidas J. and Yang, Guandao and Wetzstein, Gordon},
   title     = {{AIpparel}: A Multimodal Foundation Model for Digital Garments},
-  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition
-               (CVPR)},
-  year      = {2025},
-  note      = {Verificar autores completos y venue}
+  booktitle = {Proceedings of the Computer Vision and Pattern Recognition
+               Conference (CVPR)},
+  pages     = {8138--8149},
+  year      = {2025}
 }
 
-@article{sewingldm,
-  author  = {Anonymous},
-  title   = {Multimodal Latent Diffusion Model for Complex Sewing Pattern
-             Generation ({SewingLDM})},
-  journal = {arXiv preprint},
-  year    = {2024},
-  note    = {Verificar autores e identificador arXiv}
+@inproceedings{design2garmentcode,
+  author    = {Zhou, Feng and Liu, Ruiyang and Liu, Chen and He, Gaofeng and
+               Li, Yong-Lu and Jin, Xiaogang and Wang, Huamin},
+  title     = {{Design2GarmentCode}: Turning Design Concepts to Tangible
+               Garments Through Program Synthesis},
+  booktitle = {Proceedings of the Computer Vision and Pattern Recognition
+               Conference (CVPR)},
+  pages     = {23712--23722},
+  year      = {2025}
+}
+
+@inproceedings{sewingldm,
+  author    = {Liu, Shengqi and Cheng, Yuhao and Chen, Zhuo and Ren, Xingyu and
+               Zhu, Wenhan and Li, Lincheng and Bi, Mengxiao and Yang, Xiaokang
+               and Yan, Yichao},
+  title     = {Multimodal Latent Diffusion Model for Complex Sewing Pattern
+               Generation},
+  booktitle = {Proceedings of the IEEE/CVF International Conference on Computer
+               Vision (ICCV)},
+  pages     = {17640--17650},
+  year      = {2025}
+}
+
+@inproceedings{garmentdiffusion,
+  author    = {Li, Xinyu and Yao, Qi and Wang, Yuanda},
+  title     = {{GarmentDiffusion}: {3D} Garment Sewing Pattern Generation with
+               Multimodal Diffusion Transformers},
+  booktitle = {Proceedings of the Thirty-Fourth International Joint Conference
+               on Artificial Intelligence (IJCAI)},
+  pages     = {1458--1466},
+  year      = {2025},
+  doi       = {10.24963/ijcai.2025/163}
+}
+
+@inproceedings{garmentimage,
+  author    = {Tatsukawa, Yuki and Qi, Anran and Shen, I-Chao and Igarashi,
+               Takeo},
+  title     = {{GarmentImage}: Raster Encoding of Garment Sewing Patterns with
+               Diverse Topologies},
+  booktitle = {SIGGRAPH Conference Papers},
+  pages     = {1--11},
+  year      = {2025},
+  doi       = {10.1145/3721238.3730632}
+}
+
+% --- Validity in generative CAD --------------------------------------------
+
+@inproceedings{deepcad,
+  author    = {Wu, Rundi and Xiao, Chang and Zheng, Changxi},
+  title     = {{DeepCAD}: A Deep Generative Network for Computer-Aided Design
+               Models},
+  booktitle = {Proceedings of the IEEE/CVF International Conference on Computer
+               Vision (ICCV)},
+  pages     = {6772--6782},
+  year      = {2021}
+}
+
+@inproceedings{text2cad,
+  author    = {Khan, Mohammad Sadil and Sinha, Sankalp and Sheikh, Talha Uddin
+               and Stricker, Didier and Ali, Sk Aziz and Afzal, Muhammad
+               Zeshan},
+  title     = {{Text2CAD}: Generating Sequential {CAD} Designs from
+               Beginner-to-Expert Level Text Prompts},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {37},
+  pages     = {7552--7579},
+  year      = {2024}
+}
+
+% --- Checker-in-the-loop generation ----------------------------------------
+
+@inproceedings{drrepair,
+  author    = {Yasunaga, Michihiro and Liang, Percy},
+  title     = {Graph-based, Self-Supervised Program Repair from Diagnostic
+               Feedback},
+  booktitle = {Proceedings of the 37th International Conference on Machine
+               Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {119},
+  pages     = {10799--10808},
+  year      = {2020}
+}
+
+@inproceedings{coderl,
+  author    = {Le, Hung and Wang, Yue and Gotmare, Akhilesh Deepak and
+               Savarese, Silvio and Hoi, Steven Chu Hong},
+  title     = {{CodeRL}: Mastering Code Generation through Pretrained Models and
+               Deep Reinforcement Learning},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {35},
+  pages     = {21314--21328},
+  year      = {2022}
+}
+
+@inproceedings{lever,
+  author    = {Ni, Ansong and Iyer, Srini and Radev, Dragomir and Stoyanov,
+               Veselin and Yih, Wen-Tau and Wang, Sida and Lin, Xi Victoria},
+  title     = {{LEVER}: Learning to Verify Language-to-Code Generation with
+               Execution},
+  booktitle = {Proceedings of the 40th International Conference on Machine
+               Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {202},
+  pages     = {26106--26128},
+  year      = {2023}
+}
+
+@inproceedings{selfdebug,
+  author    = {Chen, Xinyun and Lin, Maxwell and Sch{\"a}rli, Nathanael and
+               Zhou, Denny},
+  title     = {Teaching Large Language Models to Self-Debug},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024}
+}
+
+% --- Manufacturing and pattern cutting -------------------------------------
+
+@book{boothroyd2010,
+  author    = {Boothroyd, Geoffrey and Dewhurst, Peter and Knight, Winston A.},
+  title     = {Product Design for Manufacture and Assembly},
+  edition   = {3rd},
+  publisher = {CRC Press},
+  year      = {2010},
+  isbn      = {9781420089271}
+}
+
+@book{aldrich2015,
+  author    = {Aldrich, Winifred},
+  title     = {Metric Pattern Cutting for Women's Wear},
+  edition   = {6th},
+  publisher = {Wiley},
+  year      = {2015},
+  isbn      = {9781444335057}
+}
+
+% --- Code read for the claims about existing systems -----------------------
+
+@misc{garmentcoderepo,
+  author       = {{GarmentCode contributors}},
+  title        = {{GarmentCode} source code},
+  howpublished = {\url{https://github.com/maria-korosteleva/GarmentCode},
+                  commit \texttt{d449629}, 29 June 2025},
+  year         = {2025}
+}
+
+@misc{aipparelrepo,
+  author       = {{AIpparel-Code contributors}},
+  title        = {{AIpparel-Code} source code},
+  howpublished = {\url{https://github.com/georgeNakayama/AIpparel-Code},
+                  commit \texttt{c08e089}, 6 July 2025},
+  year         = {2025}
 }
 
 @misc{svgpathtools121,
   author       = {{svgpathtools contributors}},
-  title        = {Issue 121: arc intersection reliability},
-  howpublished = {\url{https://github.com/mathandy/svgpathtools/issues/121}},
-  year         = {2024},
-  note         = {Verificar fecha}
-}
-
-% Fuentes recogidas durante la exploracion del estado del arte. Citarlas solo
-% si se usan en el texto; hoy main.tex no las referencia.
-
-@article{frontiers2026,
-  title   = {Automating the creation of fashion patterns using deep learning},
-  journal = {Frontiers in Artificial Intelligence},
-  year    = {2026},
-  url     = {https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2026.1828627/full}
-}
-
-@article{textileir,
-  title   = {Textile {IR}: an intermediate representation for fashion {CAD}},
-  journal = {arXiv preprint},
-  year    = {2026},
-  url     = {https://arxiv.org/pdf/2601.02792}
+  title        = {Intersect method for {Arc} not fully implemented:
+                  intersections returned outside of the arc},
+  howpublished = {GitHub issue \#121,
+                  \url{https://github.com/mathandy/svgpathtools/issues/121}},
+  year         = {2020}
 }

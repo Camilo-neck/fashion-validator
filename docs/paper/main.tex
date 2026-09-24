@@ -130,38 +130,71 @@ cases, and so no validator built on it can either.
 \section{Background and Related Work}
 
 \paragraph{Pattern representation.}
-GarmentCode~\citep{garmentcode} expresses garments as parametric programs over
-roughly 80 parameters, emitting a JSON pattern in which each panel carries 2D
-vertices, edges with optional cubic Bézier curvature, a 3D placement, and a
-semantic label such as \code{arm} or \code{torso}. Each seam is a pair of
-references $\{\textit{panel}, \textit{edge}\}$. GarmentCodeData~\citep{gcdata}
-scales this to roughly 115{,}000 synthetic garments and is the de facto
-pre-training corpus for the models below.
+A sewing pattern is a set of flat panels whose boundary edges are joined by
+seams. GarmentCode~\citep{garmentcode} expresses garments as parametric
+programs over roughly 80 parameters, emitting a JSON pattern in which each
+panel carries 2D vertices, edges with optional B\'ezier or circular-arc
+curvature, a 3D placement, and a semantic label such as \code{arm} or
+\code{torso}. Each seam is a pair of references $\{\textit{panel},
+\textit{edge}\}$. GarmentCodeData~\citep{gcdata} scales this to roughly
+115{,}000 synthetic garments, following an earlier synthetic dataset by the
+same group~\citep{korosteleva2021}, and is the de facto pre-training corpus for
+the models below. Graphics work has long used the pattern as the primary
+object, parsing existing 2D patterns into 3D garments~\citep{berthouzoz2013} or
+keeping a pattern and its drape consistent during interactive
+editing~\citep{sensitivecouture}, and Textile IR~\citep{textileir} proposes an
+intermediate representation between fashion CAD and physical simulation. The
+extensions of Section~\ref{sec:intent} are narrower: they add the reason for a
+length difference to the seam record of an existing format.
 
 \paragraph{Generative models.}
-ChatGarment~\citep{chatgarment} has a vision--language model emit GarmentCode's
-parameter schema key by key; its expressive ceiling is therefore exactly
-GarmentCode's space. AIpparel~\citep{aipparel} instead tokenizes geometry
-directly as drawing commands (\code{MOVE}, \code{LINE}, \code{CURVE},
-\code{CUBIC}, \code{ARC}) with seams encoded as labels shared between edges.
-This breaks the parametric ceiling but offers no validity guarantee; its own
-code defines decoding error types for malformed sequences. Because seams are
-labels rather than constraints, nothing ties the two edges they join to a common
-length --- a gap we measure in Section~\ref{sec:res-gen}.
+Learned models reconstruct patterns from point clouds~\citep{neuraltailor} and
+images~\citep{sewformer,panelformer}, and generate them from text or
+multimodal input~\citep{dresscode,sewingldm,garmentdiffusion,garmentimage}.
+Two families matter here. Parameter-emitting models predict the inputs of a
+pattern program: ChatGarment~\citep{chatgarment} has a vision--language model
+emit GarmentCode's parameter schema key by key, and
+Design2GarmentCode~\citep{design2garmentcode} synthesizes GarmentCode programs
+from design concepts, so their expressive ceiling is the program's space.
+Geometry-emitting models predict the pattern itself. AIpparel~\citep{aipparel}
+tokenizes geometry as drawing commands (\code{MOVE}, \code{LINE},
+\code{CURVE}, \code{CUBIC}, \code{ARC}) with seams encoded as labels shared
+between edges. This removes the parametric ceiling but offers no validity
+guarantee, and its code defines error types for token sequences that fail to
+decode~\citep{aipparelrepo}. Because seams are labels rather than constraints,
+nothing ties the two edges they join to a common length. Section~\ref{sec:res-gen}
+measures the consequence.
+
+\paragraph{Validity in generative CAD.}
+Generative CAD models report how often their output cannot be built.
+DeepCAD~\citep{deepcad} reports the fraction of generated command sequences
+that yield an invalid topology, and Text2CAD~\citep{text2cad} an invalidity
+ratio. These rates correspond to our notion of validity. Design for
+manufacture~\citep{boothroyd2010} asks a stronger question, whether a part can
+be produced by a given process, and that is the question we ask of sewn
+garments.
+
+\paragraph{Checker-in-the-loop generation.}
+Code generation has a mature pattern in which a cheap, deterministic checker
+returns localized errors and the generator uses them: repairing programs from
+compiler diagnostics~\citep{drrepair}, rewarding programs by unit-test
+outcome~\citep{coderl}, reranking candidates with a verifier trained on
+execution results~\citep{lever}, and prompting a model to debug its own output
+from execution feedback~\citep{selfdebug}. Our findings carry the panel, edge
+or seam reference and the measured values for this use. What sewing patterns
+lacked was the checker itself.
 
 \paragraph{What existing systems check.}
-GarmentCode performs two checks: pairwise self-intersection of edges within a
-panel, and total garment length against body height. It does not check sewable
-radii, cuttable detail size, fabric roll width, seam length agreement, or
-wearability. To our knowledge no published system checks these, and no
-benchmark reports manufacturability as a metric.
-
-\paragraph{Analogy to program repair.}
-Our framing follows the compiler loop familiar from code-generating models: a
-cheap, deterministic checker returns localized, structured errors, and the
-generator edits the specific site rather than regenerating. The contribution
-here is less the loop than the checker it presupposes, which for sewing
-patterns did not exist.
+Besides consistency checks on combinations of design parameters, GarmentCode
+runs two geometric checks: pairwise self-intersection of the edges of a panel,
+and total garment length against the floor length of the body, that is, height
+minus head~\citep{garmentcoderepo}. It does not check sewable radii, cuttable
+detail size, fabric roll width, seam length agreement or wearability.
+Commercial pattern CAD systems such as CLO3D, Lectra Modaris or Gerber
+AccuMark let a patternmaker compare the lengths of edges that will be sewn
+together (walking the seams), but as an interactive step on one pattern, not
+as a validator run over a corpus. To our knowledge no generative system or
+benchmark reports these checks.
 
 \section{A Manufacturability Validator}
 \label{sec:method}
@@ -293,9 +326,11 @@ to judge the difference --- was it wanted? --- was never written down. This is a
 representation defect, not a validator defect: no checker operating on this
 format can recover it. We propose three minimal extensions.
 
-\paragraph{Seam ease.} An optional \code{ease} field on a seam declares a
-gather, an eased seam, or a stretch fabric, with the expected length ratio and
-a tolerance:
+\paragraph{Seam ease.} Gathered and eased seams, in which one side is
+deliberately longer than the other, are standard pattern-cutting
+practice~\citep{aldrich2015}. An optional \code{ease} field on a seam declares
+a gather, an eased seam, or a stretch fabric, with the expected length ratio
+and a tolerance:
 
 \begin{lstlisting}[language=]
 {"panel": "skirt_f", "edge": 2,
@@ -888,6 +923,11 @@ re-linearized inside the first edge's loop and all edge pairs were compared
 irrespective of proximity. We now linearize each edge once and reject pairs by
 bounding box. The boxes are dilated by the vertex tolerance before comparison,
 so the rejection can only do redundant work and never misses a crossing.
+Every edge, arcs included, is linearized with 48 samples before the test.
+GarmentCode does the same for arcs, citing an open issue in the arc
+intersection routine of svgpathtools~\citep{svgpathtools121}, the geometry
+library both implementations use.
+
 
 \paragraph{Running AIpparel on 16\,GB.} The released checkpoint is stored in
 fp32 while the model instantiates in bf16, so loading it with
