@@ -193,8 +193,16 @@ hilvan patron_specification.json            # informe legible
 hilvan patron_specification.json --modelo   # errores en JSON
 ```
 
-El comando sale con código `1` si el patrón no pasa la validación completa, de
-modo que puede encadenarse en scripts y pipelines de CI.
+El código de salida es `0` si el patrón pasa la validación completa, `1` si no,
+y `2` si el error es de uso o de lectura (archivo inexistente, JSON inválido,
+clave desconocida), de modo que puede encadenarse en scripts y pipelines de CI.
+
+Cualquier umbral de `Limites` se puede cargar desde un JSON; los flags sueltos
+mandan sobre el archivo:
+
+```bash
+hilvan patron.json --limites limites.json   # {"largo_min_borde": 0.3, "tol_costura": 0.02}
+```
 
 ### API de Python
 
