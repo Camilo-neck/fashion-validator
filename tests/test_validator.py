@@ -599,3 +599,23 @@ def test_cubica_sin_bucle_no_se_cruza():
                        {"endpoints": [1, 2]}, {"endpoints": [2, 3]}, {"endpoints": [3, 0]}]}
     spec = {"pattern": {"panels": {"p": panel}, "stitches": []}}
     assert "auto_interseccion" not in errores(spec)
+
+
+def _rectangulo_girado(largo, ancho, grados):
+    import math
+
+    c, s = math.cos(math.radians(grados)), math.sin(math.radians(grados))
+    return [[x * c - y * s, x * s + y * c]
+            for x, y in [[0, 0], [largo, 0], [largo, ancho], [0, ancho]]]
+
+
+def test_panel_girado_que_cabe_en_el_rollo():
+    """200 x 100 cm girado 30 grados: su caja mide 223 x 187, pero cabe de lado."""
+    assert "excede_ancho_rollo" not in errores(_panel_solo(_rectangulo_girado(200, 100, 30)))
+
+
+def test_panel_girado_que_no_cabe():
+    hallazgos = [h for h in validar(_panel_solo(_rectangulo_girado(200, 160, 30)))
+                 if h.codigo == "excede_ancho_rollo"]
+    assert len(hallazgos) == 1
+    assert hallazgos[0].medido["ancho_cm"] == pytest.approx(160.0, abs=0.1)

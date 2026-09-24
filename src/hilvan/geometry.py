@@ -18,7 +18,8 @@ from .model import Limites
 __all__ = ["a_complejo", "rel_a_abs_2d", "segmento", "longitud",
            "radio_curvatura_min", "tangente_saliente", "angulo_entre",
            "ciclos", "angulos_interiores", "angulo_interior",
-           "linealizar", "caja", "solapan", "cruce_real", "autocruce"]
+           "linealizar", "caja", "solapan", "cruce_real", "autocruce",
+           "ancho_minimo"]
 
 
 def a_complejo(p) -> complex:
@@ -277,3 +278,40 @@ def autocruce(poli: list[Line], lim: Limites):
             if cruces:
                 return poli[i].point(cruces[0][0])
     return None
+
+
+def ancho_minimo(pts: np.ndarray) -> float:
+    """Ancho minimo de una nube de puntos sobre todas las rotaciones.
+
+    Calibres rotatorios: el ancho minimo de un conjunto convexo se alcanza con
+    uno de los lados de su envolvente apoyado, asi que basta probar cada lado y
+    quedarse con la mayor distancia de los demas puntos a esa recta.
+    """
+    unicos = sorted({(float(x), float(y)) for x, y in pts})
+    if len(unicos) < 3:
+        return 0.0
+
+    def cruz(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    # envolvente convexa por cadena monotona
+    inferior, superior = [], []
+    for p in unicos:
+        while len(inferior) >= 2 and cruz(inferior[-2], inferior[-1], p) <= 0:
+            inferior.pop()
+        inferior.append(p)
+    for p in reversed(unicos):
+        while len(superior) >= 2 and cruz(superior[-2], superior[-1], p) <= 0:
+            superior.pop()
+        superior.append(p)
+    casco = np.array(inferior[:-1] + superior[:-1])
+
+    mejor = math.inf
+    for a, b in zip(casco, np.roll(casco, -1, axis=0)):
+        lado = b - a
+        largo = math.hypot(lado[0], lado[1])
+        if largo < 1e-12:
+            continue
+        dist = np.abs(lado[0] * (casco[:, 1] - a[1]) - lado[1] * (casco[:, 0] - a[0])) / largo
+        mejor = min(mejor, float(dist.max()))
+    return mejor if mejor < math.inf else 0.0

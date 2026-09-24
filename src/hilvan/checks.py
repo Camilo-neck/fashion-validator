@@ -17,7 +17,7 @@ from svgpathtools import CubicBezier
 
 from .geometry import (a_complejo, segmento, longitud, radio_curvatura_min,
                        angulos_interiores, ciclos, linealizar, caja,
-                       solapan, cruce_real, autocruce)
+                       solapan, cruce_real, autocruce, ancho_minimo)
 from .model import Hallazgo, Limites
 
 __all__ = ["nivel0", "nivel1"]
@@ -191,15 +191,15 @@ def nivel0(pattern: dict, lim: Limites) -> list[Hallazgo]:
                         for s in segs
                         for p in (s.point(t) for t in np.linspace(0, 1, 12))])
         if len(pts):
-            ancho = float(pts[:, 0].max() - pts[:, 0].min())
-            alto = float(pts[:, 1].max() - pts[:, 1].min())
-            if min(ancho, alto) > lim.ancho_rollo:
+            # el panel se puede girar cualquier angulo sobre la tela, no solo 90
+            # grados: lo que tiene que caber es su ancho minimo
+            ancho = ancho_minimo(pts)
+            if ancho > lim.ancho_rollo:
                 out.append(Hallazgo(0, "excede_ancho_rollo", "error",
-                                    f"el panel mide {ancho:.0f} x {alto:.0f} cm y no cabe en un "
-                                    f"rollo de {lim.ancho_rollo} cm ni girandolo",
-                                    panel=nombre,
-                                    medido={"ancho_cm": round(ancho, 1),
-                                            "alto_cm": round(alto, 1)}))
+                                    f"el panel mide al menos {ancho:.0f} cm de ancho en "
+                                    f"cualquier giro y no cabe en un rollo de "
+                                    f"{lim.ancho_rollo} cm",
+                                    panel=nombre, medido={"ancho_cm": round(ancho, 1)}))
     return out
 
 
