@@ -317,13 +317,15 @@ coherente y usa el convenio o la deducción global.
 | --- | --- |
 | `vertice_inexistente` | un borde apunta a un vértice fuera de rango |
 | `contorno_abierto` | los bordes no forman un ciclo cerrado |
+| `contorno_multiple` | los bordes forman varios ciclos: un agujero o dos piezas en un panel |
 | `vertice_huerfano` | vértice que ningún borde usa |
 | `borde_degenerado` | borde más corto que el mínimo cortable |
 | `curvatura_excesiva` | radio de curvatura por debajo del mínimo cosible |
-| `esquina_aguda` | ángulo demasiado cerrado para coserse |
-| `pico_de_pinza` | esquina aguda reconocida como pinza legítima (info) |
-| `auto_interseccion` | dos bordes del panel se cruzan fuera de un vértice |
-| `excede_ancho_rollo` | el panel no cabe en el ancho de tela ni girándolo |
+| `esquina_aguda` | punta convexa demasiado cerrada para coserse |
+| `muesca_aguda` | muesca cóncava muy cerrada que no es una pinza (aviso) |
+| `pico_de_pinza` | muesca aguda reconocida como pinza: dos bordes rectos iguales (info) |
+| `auto_interseccion` | dos bordes del panel se cruzan fuera de un vértice, o una curva hace un bucle |
+| `excede_ancho_rollo` | el panel no cabe en el ancho de tela en ningún giro |
 
 ### Nivel 1 — grafo de costuras
 
@@ -356,6 +358,50 @@ coherente y usa el convenio o la deducción global.
 | `abertura` | contorno de cada abertura de la prenda montada (info) |
 | `montaje_supuesto` | falta `orient`, así que se mide pero no se juzga (aviso) |
 | `montaje_incoherente` | el contorno montado no se puede recorrer (aviso) |
+
+### Correspondencia con el paper
+
+Los códigos están en español y el paper usa nombres en inglés. La clase dice en
+qué nivel de veredicto cuenta cada error: los **estructurales** deciden si el
+patrón es *valid*, los **duros** si es *hard-defect-free* (`DUROS`), y
+cualquier error impide que esté *fully validated*.
+
+| Código | En el paper | Severidad | Clase |
+| --- | --- | --- | --- |
+| `vertice_inexistente` | vertex reference does not exist | error | estructural |
+| `panel_inexistente` | panel reference does not exist | error | estructural |
+| `borde_inexistente` | edge reference does not exist | error | estructural |
+| `contorno_abierto` | panel boundary is not a closed cycle | error | estructural |
+| `contorno_multiple` | panel boundary is not a single cycle | error | estructural |
+| `costura_no_binaria` | seam does not join exactly two edges | error | estructural |
+| `costura_nula` | seam of zero length | error | estructural |
+| `borde_multicosido` | edge sewn twice | error | estructural |
+| `panel_suelto` | panel left unsewn | error | estructural |
+| `borde_degenerado` | edge below cuttable length (short edge) | error | duro |
+| `esquina_aguda` | corner too sharp to sew (sharp corner) | error | duro |
+| `curvatura_excesiva` | curve too tight to sew | error | duro |
+| `excede_ancho_rollo` | exceeds fabric roll width | error | duro |
+| `auto_interseccion` | self-intersection | error | duro |
+| `desajuste_no_declarado` | undeclared seam mismatch (1–15%) | error | intención no declarada |
+| `fruncido_no_declarado` | undeclared mismatch above the gather threshold | aviso | intención no declarada |
+| `acabado_no_declarado` | free edge with no declared finish | aviso | intención no declarada |
+| `ease_incongruente` | declared ease contradicted by the geometry | error | declaración |
+| `acabado_incongruente` | finish declared on a sewn edge, or unknown | error | declaración |
+| `orientacion_incongruente` | unknown `orient` value | error | declaración |
+| `orientacion_dudosa` | declaration contradicted by topology | aviso | declaración |
+| `quiebre_en_cruce` | kink at a seam crossing (Eq. 1) | aviso | continuidad |
+| `esquina_de_diseno` | drawn corner between straight edges | info | continuidad |
+| `muesca_aguda` | — (posterior al paper) | aviso | geometría |
+| `pico_de_pinza` | dart tip | info | geometría |
+| `vertice_huerfano` | — | aviso | geometría |
+| `prenda_desconectada` | — | aviso | grafo |
+| `costuras_en_redondo` | seams sewn in the round ($E - V + C$) | info | ensamblaje |
+| `bordes_libres` | free edges | info | ensamblaje |
+| `abertura` | opening girth | info | vestibilidad |
+| `abertura_insuficiente` | opening smaller than the body measure | error, o aviso si el montaje es supuesto | vestibilidad |
+| `prenda_sellada` | no free edge | error | vestibilidad |
+| `montaje_supuesto` | assembly under the default orientation | aviso | vestibilidad |
+| `montaje_incoherente` | free boundary cannot be traversed | aviso | vestibilidad |
 
 ## Vestibilidad
 

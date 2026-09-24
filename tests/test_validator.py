@@ -730,3 +730,18 @@ def test_salida_estable_entre_procesos():
                               env={**os.environ, "PYTHONHASHSEED": str(s)}).stdout
                for s in range(4)}
     assert len(salidas) == 1
+
+
+def test_tabla_del_readme_cubre_todos_los_codigos():
+    """La correspondencia codigo -> paper del README no puede quedarse atras."""
+    import re
+
+    from hilvan import DUROS, ESTRUCTURALES
+
+    readme = (Path(__file__).parents[1] / "README.md").read_text(encoding="utf-8")
+    seccion = readme.split("### Correspondencia con el paper")[1].split("\n## ")[0]
+    filas = {m.group(1): m.group(2).strip()
+             for m in re.finditer(r"^\| `([a-z_]+)` \|.*\| ([^|]+) \|$", seccion, re.M)}
+    assert set(filas) == _emitidos()
+    assert {c for c, clase in filas.items() if clase == "duro"} == DUROS
+    assert {c for c, clase in filas.items() if clase == "estructural"} == ESTRUCTURALES
