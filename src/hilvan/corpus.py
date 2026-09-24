@@ -1,13 +1,13 @@
 """Barrido de un corpus de patrones: medir, y separar lo sano de lo roto.
 
 El uso con mas retorno del validador no es el bucle de reparacion sino este.
-Si 23 de cada 30 patrones que GarmentCode da por validos tienen defectos, las
-115.000 prendas de GarmentCodeData los tienen tambien, y un modelo entrenado
-sobre ese corpus los aprende como construccion correcta. Filtrarlo antes de
-entrenar corrige el problema en la raiz, una sola vez.
+Un corpus de entrenamiento con defectos se los ensena al modelo como
+construccion correcta, y filtrarlo antes de entrenar corrige el problema en la
+raiz, una sola vez. Las cifras medidas sobre GarmentCodeData estan en
+docs/hallazgos-corpus.md.
 
-No necesita GarmentCode: lee los JSON ya generados. A unos 10 ms por patron,
-115.000 son unos 20 minutos en un solo nucleo.
+No necesita GarmentCode: lee los JSON ya generados, a unos milisegundos por
+patron.
 
     from hilvan.corpus import barrer
     informe = barrer(Path("GarmentCodeData"))

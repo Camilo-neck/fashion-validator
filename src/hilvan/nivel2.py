@@ -165,9 +165,9 @@ def nivel2(pattern: dict, lim: Limites, cuerpo: Cuerpo | None = None) -> list[Ha
         out.append(Hallazgo(
             2, "montaje_supuesto", "aviso",
             f"{total - declaradas} de {total} costuras no declaran `orient`, asi que el "
-            f"montaje usa el convenio por defecto '{lim.orientacion_por_defecto}'. En "
-            f"3.450 patrones de GarmentCodeData ese convenio gana en 3.310 y pierde en "
-            f"ninguno, pero al no estar declarado los veredictos bajan a aviso",
+            f"montaje usa el convenio por defecto '{lim.orientacion_por_defecto}' "
+            f"(Limites.orientacion_por_defecto; ver 'Orientacion de la costura' en el "
+            f"README). Al no estar declarado, los veredictos bajan a aviso",
             medido={"declaradas": declaradas, "costuras": total}))
 
     for bucle in bucles:

@@ -356,9 +356,9 @@ def test_aberturas_de_la_camiseta(sano):
 def test_sin_orient_el_veredicto_baja_a_aviso(sano):
     """El convenio por defecto sostiene el hallazgo, pero el patron no lo afirma.
 
-    En 3.450 patrones de GarmentCodeData 'reversed' gana en 3.310 y pierde en
-    ninguno, asi que callarse seria desperdiciarlo; pero sin declaracion el
-    hallazgo no puede ser un error.
+    El convenio esta medido sobre el corpus (docs/hallazgos-corpus.md), asi que
+    callarse seria desperdiciarlo; pero sin declaracion el hallazgo no puede
+    ser un error.
     """
     _declarar_abertura(sano, 42.1, fits="head")
     hallazgos = [h for h in validar(sano, cuerpo=Cuerpo()) if h.nivel == 2]
@@ -648,3 +648,12 @@ def test_frontera_de_las_zonas_de_desajuste(largo_b, esperado):
             assert h.medido["presunto"] == "fruncido"
             assert h.medido["umbral_fruncido"] == 0.15
             assert "umbral_fruncido" in h.mensaje
+
+
+def test_mensajes_sin_cifras_de_un_corpus(sano):
+    """El mensaje sale para cualquier patron, tambien uno de AIpparel: no puede
+    citar datos de GarmentCodeData como si fueran del patron."""
+    import re
+
+    for h in validar(sano):
+        assert not re.search(r"\d\.\d{3}\b", h.mensaje), h.mensaje
