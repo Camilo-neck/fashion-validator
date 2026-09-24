@@ -193,7 +193,11 @@ también los hace reproducibles y arreglables en origen.
 
 ## Lo que este barrido no dice
 
-- **Un lote de veinticuatro**, aunque con sus dos mitades de cuerpo medidas.
+- **Un lote de 36 para el análisis detallado**, con sus dos mitades de cuerpo
+  medidas. El titular se repitió el 24 de septiembre de 2026 sobre el cuerpo
+  neutro de los lotes 1 y 2 con `research/sanear_corpus.py` (3.414 y 3.430
+  patrones): defecto duro en el 19,6% y el 20,0%, validación completa en el
+  11,2% y el 10,5%, frente al 20,4% y el 10,5% del lote 0.
 - **El nivel 2 juzga con reservas.** Ningún patrón declara `orient`, así que el
   montaje usa el convenio por defecto y los veredictos bajan de error a aviso.
   Ese convenio no es una conjetura: ver abajo.

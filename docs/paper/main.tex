@@ -70,7 +70,7 @@ extensions that make this intent expressible, and \hilvan, an open-source,
 deterministic validator that runs on a CPU in about 10\,ms per pattern.
 Discarding every pattern with an error keeps 10.5\% of the corpus and halves
 its share of full-body garments; discarding only hard defects keeps 79.6\% with
-the composition intact. Body shape has no detectable effect on defect rates
+the composition intact. Body shape has no detectable effect on hard-defect rates
 (paired McNemar $p = 0.91$, 2{,}953 designs), so the defects come from the
 design program. Applied to AIpparel, the same measurement finds 23\% of
 image-conditioned and 17\% of text-conditioned patterns free of hard defects,
@@ -121,7 +121,7 @@ either.
   before it is sewn for real.
   \item Empirical guidance for using such a validator: the zero-error filter is
   biased against complex garments while a defect-class filter is not
-  (Section~\ref{sec:res-filter}); defect rates do not depend on body shape
+  (Section~\ref{sec:res-filter}); hard-defect rates do not depend on body shape
   (Section~\ref{sec:res-body}); and applied to AIpparel, the metric locates the
   failure in seam length agreement rather than in garment complexity or
   conditioning modality (Section~\ref{sec:res-gen}).
@@ -302,8 +302,9 @@ check is gated on the pattern declaring what each opening must clear, how much
 the fabric stretches there, and whether a closure opens it
 (Section~\ref{sec:intent}); without those, girths are reported but nothing is
 judged. No corpus pattern carries these declarations, so in this paper Level~2
-produces measurements only (Section~\ref{sec:res-wear}); its verdicts are not
-evaluated.
+produces measurements only (Sections~\ref{sec:res-wear}
+and~\ref{sec:limitations}); its verdicts are not evaluated.
+
 
 \subsection{Assembly order}
 
@@ -687,7 +688,7 @@ filtering criteria; $n$ is the number of patterns retained.}
 \label{fig:filters}
 \end{figure}
 
-\subsection{Body shape does not affect defect rates}
+\subsection{Body shape does not affect hard-defect rates}
 \label{sec:res-body}
 
 GarmentCodeData renders each design on a neutral body and on randomized bodies.
@@ -723,7 +724,8 @@ body type.
 \subsection{Opening girths}
 \label{sec:res-wear}
 
-Under the default orientation all 3{,}450 patterns assemble into a coherent
+We ran the girth measurement of Section~\ref{sec:wear} over the corpus. Under
+the default orientation all 3{,}450 patterns assemble into a coherent
 free boundary, with a median of four openings per garment. The smallest opening
 of a garment has a median girth of 53.4\,cm (10th percentile 25.9\,cm), and in
 171 patterns (5.0\%) it is shorter than the 21\,cm hand girth of our reference
@@ -837,9 +839,14 @@ as threshold-conditional, the split between full validation and undeclared
 intent depends strongly on the seam tolerance, and the precision of each
 finding class awaits the manual audit of Section~\ref{sec:res-audit}.
 
-\paragraph{One batch of twenty-four.} We measured both body variants of a
-single batch. Batch-to-batch variation is unmeasured, though the two body
-variants agreeing so closely is mild evidence for homogeneity.
+\paragraph{Three batches of 36.} The detailed analyses use both body variants
+of one batch. We repeated the headline measurement on the neutral body of two
+more batches (3{,}414 and 3{,}430 patterns), streaming each archive without
+storing it. The share with a hard defect is 20.4\%, 19.6\% and 20.0\% across
+the three batches, and the fully validated share 10.5\%, 11.2\% and 10.5\%.
+This is evidence of homogeneity, not a measurement of the whole corpus.
+% research/sanear_corpus.py <destino> 1-2 ; lotes 1 y 2, cuerpo neutro
+
 
 \paragraph{No downstream demonstration.} We describe the validator's use as a
 filter, a repair signal and a training reward, and we characterize how
