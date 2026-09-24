@@ -18,9 +18,10 @@ formato que un modelo puede leer para corregirse.
 [![Estado](https://img.shields.io/badge/estado-alfa-orange)](#estado-y-límites-conocidos)
 [![CPU](https://img.shields.io/badge/CPU--only-~10%20ms%20por%20patrón-informational)](#barrido-de-un-corpus)
 
-**0 de 200** patrones generados por un modelo del estado del arte son
-manufacturables.&nbsp;&nbsp;·&nbsp;&nbsp;**1 de cada 5** del corpus con el que
-se entrenó, tampoco.
+**1 de cada 5** patrones del corpus con el que se entrenan los modelos tiene un
+defecto geométrico duro.&nbsp;&nbsp;·&nbsp;&nbsp;De lo que genera un modelo del
+estado del arte, como mucho **el 23%** está libre de ellos, frente al **78%**
+del corpus.
 
 </div>
 
@@ -51,7 +52,7 @@ INFO   costuras_en_redondo: 14 de 27 costuras cierran un tubo y hay que coserlas
 ```
 
 Ese patrón sale del corpus publicado de GarmentCode: ya filtrado por sus
-autores, ya superviviente de la simulación física. Aun así dos de sus costuras
+autores y superviviente de la simulación física. Aun así dos de sus costuras
 unen bordes de longitudes distintas —cosidos, no cierran— y el contorno da un
 quiebre de 50° al cruzar el costado. El comando termina con código `1`, así que
 encadena en un pipeline igual que cualquier linter.
@@ -64,6 +65,7 @@ puedan coser.
 ## Tabla de contenidos
 
 - [Motivación](#motivación)
+- [Paper](#paper)
 - [Instalación](#instalación)
 - [Uso](#uso)
 - [Declarar la intención](#declarar-la-intención)
@@ -82,23 +84,39 @@ puedan coser.
 ## Motivación
 
 Los sistemas actuales validan muy poco. GarmentCode, el más completo de los
-proyectos abiertos, solo comprueba que un panel no se cruce consigo mismo y que
-la prenda no arrastre por el suelo.
+proyectos abiertos, además de comprobar que los parámetros de diseño sean
+compatibles, solo mira dos cosas de la geometría: que un panel no se cruce
+consigo mismo y que la prenda no arrastre por el suelo.
 
-Sobre **3.450 patrones del corpus publicado GarmentCodeData v2** — ya filtrados
-por sus autores y supervivientes de la simulación física — este validador
+Sobre **3.450 patrones del corpus publicado GarmentCodeData v2**, ya filtrados
+por sus autores y supervivientes de la simulación física, este validador
 encuentra que:
 
 | | Patrones | % |
 | --- | ---: | ---: |
-| Tienen un defecto geométrico que impide fabricarlos | 705 | **20,4** |
+| Tienen un defecto geométrico duro | 705 | **20,4** |
 | Solo les falta declarar la intención de una costura | 2.383 | 69,1 |
-| Pasan limpios | 362 | 10,5 |
+| Pasan la validación completa (cero errores) | 362 | 10,5 |
 
-Uno de cada cinco no se puede coser: bordes de 0,018 cm, esquinas de 0,16°,
-paneles que no caben en el rollo. Los otros dos tercios no son necesariamente
-defectuosos — son *indistinguibles* de un defecto, porque el formato no guarda
-si un desajuste era buscado.
+Un **defecto duro** es uno que ninguna declaración puede excusar: un borde
+demasiado corto para cortarlo (hasta 0,018 cm), una esquina demasiado aguda
+para coserla (hasta 0,12°), una curva demasiado cerrada, un panel que no cabe
+en el rollo o un contorno que se cruza a sí mismo. Los otros dos tercios no son
+necesariamente defectuosos: son *indistinguibles* de un defecto, porque el
+formato no guarda si un desajuste era buscado.
+
+Que los patrones sobrevivieron a la simulación está comprobado: cada lote
+publica la lista de prendas cuya simulación falló (1.551 en este) y ninguna
+está entre las medidas. El resultado tampoco depende del lote ni de los
+umbrales exactos:
+
+- En otros dos lotes, el defecto duro aparece en el 19,6% y el 20,0% de los
+  patrones.
+- Barriendo la longitud mínima de borde entre 0,25 y 1 cm y el ángulo mínimo
+  entre 10° y 20°, el porcentaje se mueve entre el 15% y el 32%.
+- Fusionar vértices a menos de 1 mm, como haría un CAD al importar, lo deja en
+  el 19,2%: la mayoría de los bordes cortos están cosidos a otro panel, no son
+  vértices duplicados.
 
 La metodología está en
 [`docs/hallazgos-corpus.md`](docs/hallazgos-corpus.md); la fase 1, sobre 30
@@ -109,17 +127,20 @@ patrones, en [`docs/hallazgos-fase1.md`](docs/hallazgos-fase1.md).
 La misma vara aplicada a [AIpparel](https://georgenakayama.github.io/AIpparel/)
 sobre 100 prendas del corpus, cada una pedida por imagen y por texto:
 
-| | Manufacturable | Costuras que no cierran |
-| --- | ---: | ---: |
-| AIpparel, desde imagen | **0 de 100** | 88% |
-| AIpparel, desde texto | **0 de 100** | 86% |
-| Corpus (ground truth) | 12 de 100 | 33% |
+| | Sin defecto duro | Validación completa | Costuras | Costuras desajustadas |
+| --- | ---: | ---: | ---: | ---: |
+| AIpparel, desde imagen | **23 de 100** | 0 de 100 | 31,6 | 88% |
+| AIpparel, desde texto | **17 de 100** | 0 de 100 | 26,8 | 86% |
+| Corpus (ground truth) | 78 de 100 | 12 de 100 | 31,5 | 33% |
 
-Genera patrones de la misma complejidad que el corpus —31,6 costuras por patrón
-contra 31,5— y falla en casi todas: los dos bordes de una costura salen de
+Una costura está desajustada si sus dos lados difieren en más de un 1% sin
+declaración. AIpparel genera patrones con tantas costuras como el corpus (31,6
+contra 31,5) y desajusta casi todas: los dos bordes de una costura salen de
 predicciones independientes y nada los obliga a medir lo mismo. El modo de
-entrada no cambia el resultado (McNemar pareado, p = 0,345). Detalle y cautelas
-en [`docs/hallazgos-aipparel.md`](docs/hallazgos-aipparel.md).
+entrada no cambia el resultado (McNemar pareado, p = 0,345). Ninguno de los 200
+pasa la validación completa; con 0 de 200, la cota superior exacta del 95%
+(Clopper-Pearson, unilateral) es 1,5%. Detalle y cautelas en
+[`docs/hallazgos-aipparel.md`](docs/hallazgos-aipparel.md).
 
 Medir un modelo que emite *parámetros* en vez de geometría exige pasar su salida
 por GarmentCode antes de validarla, así que el número mediría la pareja. Pasando
@@ -127,6 +148,28 @@ los parámetros verdaderos de esas 100 prendas por el mismo sintetizador se ve
 cuánto aporta: reproduce el veredicto del patrón publicado en **99 de 100**. La
 asimetría es una cota de un punto, no un agujero
 ([`docs/hallazgos-sintetizador.md`](docs/hallazgos-sintetizador.md)).
+
+## Paper
+
+Los resultados están escritos en [`docs/paper/main.tex`](docs/paper/main.tex),
+*Valid Is Not Manufacturable: Auditing Generative Sewing Patterns at Corpus
+Scale*. Todas sus cifras y figuras salen del corpus con scripts de
+[`research/`](research/), no se copian a mano:
+
+```bash
+python research/numeros_paper.py data/garmentcodedata_0 data/garmentcodedata_0_random
+python research/figuras_paper.py data/garmentcodedata_0 docs/paper/figs
+python research/sensibilidad_umbrales.py data/garmentcodedata_0 docs/paper/figs
+python research/fusion_vertices.py data/garmentcodedata_0
+```
+
+Para compilarlo, dentro de `docs/paper/`:
+`pdflatex main && bibtex main && pdflatex main && pdflatex main`.
+
+Queda pendiente una auditoría manual de precisión: una muestra estratificada
+de 100 hallazgos, con semilla fija, en [`docs/auditoria/`](docs/auditoria/),
+cada uno con un SVG del elemento señalado y una fila en `auditoria.csv` cuyo
+veredicto rellena una persona.
 
 ## Instalación
 
@@ -166,8 +209,9 @@ if not resumen(hallazgos)["valido"]:
 
 GarmentCode guarda cada costura como `{panel, edge}` y no indica si una
 diferencia de longitud entre sus dos bordes es un fruncido buscado o un defecto.
-Sin esa información nadie puede distinguirlos: en los patrones medidos, el 35%
-de las costuras tiene los dos lados con longitudes distintas.
+Sin esa información nadie puede distinguirlos: en el corpus medido, el 31,8% de
+las costuras (33.092 de 104.064) tiene los dos lados con longitudes que
+difieren en más de un 1%.
 
 Por eso el validador acepta un campo opcional `ease`:
 
@@ -183,7 +227,16 @@ Por eso el validador acepta un campo opcional `ease`:
 | `tol` | tolerancia relativa sobre ese ratio (por defecto `0.05`) |
 
 Declarado y coherente con la geometría, el patrón es válido. Declarado pero
-falso, se reporta `ease_incongruente`. Sin declarar, `desajuste_no_declarado`.
+falso, se reporta `ease_incongruente`. Sin declarar, depende del tamaño del
+desajuste:
+
+| Desajuste sin declarar | Resultado |
+| --- | --- |
+| hasta 1% | pasa: es redondeo del trazado |
+| entre 1% y 15% | error `desajuste_no_declarado` |
+| más de 15% | aviso `fruncido_no_declarado`: casi seguro es un fruncido que nadie escribió |
+
+La tercera zona no es marginal: el 47% de los desajustes del corpus cae en ella.
 
 El mismo hueco existe en los bordes que no se cosen: un dobladillo bien rematado
 y un borde olvidado son el mismo dato. El borde declara su acabado en el panel:
@@ -222,7 +275,9 @@ deducción, porque el deducido es una cota inferior.
 Un borde sin coser solo puede continuar en otro borde sin coser. Si la
 orientación declarada encaja en menos cruces que la contraria, se reporta
 `orientacion_dudosa`. En la camiseta de prueba, `reversed` encaja en 12 cruces
-y `direct` en 4.
+y `direct` en 4. Sobre los 3.450 patrones del corpus, `reversed` gana en 3.310,
+empata en 140 y pierde en ninguno, con una mediana de 8 cruces de ventaja: por
+eso es el convenio por defecto cuando la costura no declara nada.
 
 ## Comprobaciones
 
@@ -285,7 +340,11 @@ from hilvan import validar, Cuerpo
 hallazgos = validar(spec, cuerpo=Cuerpo(head=57, hip=100))
 ```
 
-Sin `cuerpo`, las aberturas se miden y se informan, pero no se juzgan.
+Sin `cuerpo`, las aberturas se miden y se informan, pero no se juzgan. Ningún
+patrón de GarmentCodeData declara `fits`, así que sobre el corpus el nivel 2
+solo mide: todos los patrones montan un contorno coherente, con una mediana de
+cuatro aberturas, y en 171 (el 5%) la más pequeña mide menos que los 21 cm de
+contorno de mano del cuerpo de referencia.
 
 Una abertura declara qué medida tiene que dejar pasar, y con qué ayuda:
 
@@ -313,27 +372,34 @@ implementada a propósito; el plan está en
 ## Barrido de un corpus
 
 El uso con más retorno no es el bucle de reparación: es filtrar el corpus de
-entrenamiento. Si 23 de cada 30 patrones que GarmentCode da por válidos tienen
-defectos, las 115.000 prendas de GarmentCodeData los tienen también, y un modelo
-entrenado sobre ellas los aprende como construcción correcta.
+entrenamiento. Si uno de cada cinco patrones publicados tiene un defecto duro,
+las 115.000 prendas de GarmentCodeData lo tienen también en esa proporción, y
+un modelo entrenado sobre ellas lo aprende como construcción correcta.
 
 ```bash
 hilvan GarmentCodeData/ --lote --salida informe.json
 ```
 
 Recorre el directorio, valida cada patrón y escribe el recuento por código más
-un manifiesto con los que pasan limpio, que es lo que se pasa al entrenamiento.
-No necesita GarmentCode: lee los JSON ya generados. A unos 10 ms por patrón,
-115.000 son unos 20 minutos en un núcleo.
+un manifiesto con los que pasan la validación completa. No necesita
+GarmentCode: lee los JSON ya generados. A unos 10 ms por patrón, 115.000 son
+unos 20 minutos en un núcleo. Un archivo ilegible se anota y el barrido sigue.
+
+**Ese manifiesto no es el que conviene para entrenar.** Quedarse solo con los
+patrones sin ningún error conserva el 10,5% del corpus y lo sesga hacia prendas
+simples: los errores se acumulan con el número de costuras aunque la tasa por
+costura sea plana, así que las prendas de cuerpo entero bajan del 60% al 31%.
+Descartar solo los defectos duros conserva el 79,6% y deja la composición casi
+intacta (58% de cuerpo entero):
 
 ```python
-from hilvan.corpus import barrer
+from pathlib import Path
+from hilvan import DUROS, Limites
+from hilvan.corpus import validar_archivo
 
-informe = barrer(Path("GarmentCodeData"))
-print(informe["pct_rechazados"], informe["hallazgos_por_codigo"])
+sanos = [r for r in Path("GarmentCodeData").rglob("*specification.json")
+         if not DUROS & set(validar_archivo(r, Limites()).get("por_codigo", {}))]
 ```
-
-Un archivo ilegible se anota y el barrido sigue.
 
 ## Salida para reparación automática
 
@@ -358,6 +424,28 @@ Los umbrales viven en `Limites` y son configurables, porque la alta costura
 rompe varios a propósito. El sistema debe distinguir entre "roto" e
 "intencionalmente poco convencional", y esa decisión es del diseñador.
 
+| Campo | Por defecto | Qué controla |
+| --- | ---: | --- |
+| `largo_min_borde` | 0,5 cm | borde más corto que se puede cortar y coser |
+| `angulo_min_esquina` | 15° | esquina más aguda que se puede coser |
+| `radio_min_curva` | 0,3 cm | curva más cerrada que se puede coser |
+| `ancho_rollo` | 150 cm | ancho útil de la tela; el panel puede girarse |
+| `tol_costura` | 1% | diferencia de longitud atribuible al redondeo |
+| `umbral_fruncido` | 15% | por encima, un desajuste sin declarar se presume fruncido (aviso) |
+| `tol_ease_default` | 5% | tolerancia sobre un ratio `ease` declarado |
+| `tol_simetria_pinza` | 2% | diferencia admitida entre los dos lados de una pinza |
+| `angulo_max_quiebre` | 20° | quiebre tolerado al cruzar una costura |
+| `eps_vertice` | 0,05 cm | un cruce más cerca que esto de un vértice común se ignora |
+| `muestras_linealizacion` | 48 | resolución para cruzar arcos y curvas |
+| `orientacion_por_defecto` | `reversed` | emparejamiento de extremos cuando la costura no declara `orient` |
+
+Barrer los umbrales duros sobre el corpus
+([`research/sensibilidad_umbrales.py`](research/sensibilidad_umbrales.py))
+muestra que el porcentaje con defecto duro cambia poco dentro de rangos
+razonables. La tolerancia de costura sí mueve mucho el porcentaje que pasa la
+validación completa: del 10,5% al 1% al 28% al 5%, porque muchos desajustes del
+corpus se concentran cerca del 5% y del 7%.
+
 `permitir_pinzas` reconoce el pico de una pinza — dos bordes rectos de igual
 longitud en punta — y no lo reporta como esquina inválida. Sin esa excepción,
 toda falda y todo pantalón se marcan como defectuosos.
@@ -374,7 +462,7 @@ pip install -e ".[dev]"
 pytest
 ```
 
-La suite tiene 40 casos que comprueban las dos direcciones: que un patrón sano
+La suite tiene 41 casos que comprueban las dos direcciones: que un patrón sano
 pase limpio y que cada defecto inyectado se detecte. Las dos importan por igual
 — la primera versión de este validador rechazaba el 100% de los patrones.
 
@@ -384,7 +472,8 @@ Los niveles 0 y 1 están completos, y el nivel 2 solo en su mitad
 geométrica. Pendiente:
 
 - **Calibración real**: los umbrales por defecto son razonables pero no están
-  contrastados contra telas físicas. Eso requiere un patronista.
+  contrastados contra telas físicas. Eso requiere un patronista, y es lo que
+  debe resolver la auditoría de [`docs/auditoria/`](docs/auditoria/).
 - **Nivel 2 simulado**: drapeado, mapas de tensión y poses dinámicas. No está
   hecho a propósito: sin telas medidas ni patronista, un veredicto basado en
   simulación afirma algo que nadie ha comprobado. Ver
@@ -404,10 +493,14 @@ proyecto del que nace este validador en [`docs/proyecto.md`](docs/proyecto.md).
 ## Estructura del repositorio
 
 ```
-src/hilvan/   el paquete; solo numpy y svgpathtools
-tests/                   pruebas de discriminación
-research/                bancos que produjeron los números (necesitan GarmentCode)
-docs/                    hallazgos, hoja de ruta, contexto y plan del nivel 2
+src/hilvan/     el paquete; solo numpy y svgpathtools
+tests/          pruebas de discriminación
+research/       bancos que produjeron los números: los de corpus solo necesitan
+                data/; los de generación, GarmentCode o AIpparel
+docs/           hallazgos, hoja de ruta, contexto y plan del nivel 2
+docs/paper/     el paper, sus figuras y los números que las sostienen
+docs/auditoria/ muestra para la auditoría manual de precisión
+
 ```
 
 ## Contribuir
