@@ -60,3 +60,23 @@ def test_curva_cerrada_se_reporta():
     assert len(curvas) == 1
     assert curvas[0].severidad == "error"
     assert curvas[0].medido["radio_cm"] == pytest.approx(0.25, abs=0.01)
+
+
+def _borde(curvatura):
+    panel = {"vertices": [[0, 0], [10, 0]],
+             "edges": [{"endpoints": [0, 1], "curvature": curvatura}]}
+    return segmento(panel, panel["edges"][0])
+
+
+def test_formato_antiguo_de_cuadratica():
+    """[x, y] es el control de una cuadratica, como lo lee pygarment."""
+    antiguo = _borde([0.5, 0.2])
+    nuevo = _borde({"type": "quadratic", "params": [[0.5, 0.2]]})
+    assert antiguo.point(0.5) == pytest.approx(nuevo.point(0.5))
+    assert antiguo.point(0.5) == pytest.approx(complex(5, 1))
+
+
+def test_formato_antiguo_de_cubica():
+    antiguo = _borde([[0.3, 0.2], [0.7, -0.2]])
+    nuevo = _borde({"type": "cubic", "params": [[0.3, 0.2], [0.7, -0.2]]})
+    assert antiguo.point(0.25) == pytest.approx(nuevo.point(0.25))

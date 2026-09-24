@@ -47,8 +47,15 @@ def segmento(panel: dict, edge: dict):
     if not curv:
         return Line(inicio, fin)
 
-    tipo = curv["type"] if isinstance(curv, dict) else "cubic"
-    params = curv["params"] if isinstance(curv, dict) else curv
+    if isinstance(curv, dict):
+        tipo, params = curv["type"], curv["params"]
+    elif len(curv) == 2 and all(isinstance(c, (int, float)) for c in curv):
+        # formato antiguo: [x, y] es el unico control de una cuadratica, que es
+        # como lo lee pygarment.pattern.core._edge_as_curve
+        tipo, params = "quadratic", [curv]
+    else:
+        # una lista de dos puntos de control: una cubica
+        tipo, params = "cubic", curv
 
     if tipo == "circle":
         # mismo convenio que SVG: [radio, large_arc, sweep]
